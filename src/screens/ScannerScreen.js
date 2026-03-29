@@ -1,0 +1,1033 @@
+/**
+ * Always Near — Independent Living Monitoring Application
+ * Copyright © 2026 Theory Solutions LLC. All rights reserved.
+ *
+ * PROPRIETARY AND CONFIDENTIAL
+ * This source code is the exclusive property of Theory Solutions LLC.
+ * Unauthorized copying, distribution, modification, or use of this file,
+ * via any medium, is strictly prohibited.
+ */
+
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet,
+  Dimensions, Animated, Vibration, Alert,
+  TextInput, ScrollView, KeyboardAvoidingView, Platform,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { COLORS } from '../constants/colors';
+
+const { width, height } = Dimensions.get('window');
+const SCAN_BOX_SIZE = width * 0.78;
+
+// ─── Step definitions ───────────────────────────────────────────────────────
+const STEPS = [
+  { id: 'position', label: 'Position',    hint: 'Center the prescription label in the frame' },
+  { id: 'rotate',   label: 'Rotate',      hint: 'Slowly rotate the bottle so the full label passes through the frame' },
+  { id: 'barcode',  label: 'Barcode',     hint: 'Point at the barcode on the bottle — it scans automatically' },
+  { id: 'review',   label: 'Review',      hint: 'Check and correct any details before saving' },
+  { id: 'done',     label: 'Done',        hint: 'Medication saved!' },
+];
+
+// ─── Scanning line animation ─────────────────────────────────────────────────
+function ScanLine({ active }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!active) return;
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(anim, { toValue: 1, duration: 1800, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0, duration: 1800, useNativeDriver: true }),
+      ])
+    ).start();
+    return () => anim.stopAnimation();
+  }, [active]);
+
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, SCAN_BOX_SIZE - 4],
+  });
+
+  return (
+    <Animated.View style={[styles.scanLine, { transform: [{ translateY }] }]} />
+  );
+}
+
+// ─── Corner brackets for viewfinder ─────────────────────────────────────────
+function ViewfinderCorners() {
+  return (
+    <>
+      <View style={[styles.corner, styles.cornerTL]} />
+      <View style={[styles.corner, styles.cornerTR]} />
+      <View style={[styles.corner, styles.cornerBL]} />
+      <View style={[styles.corner, styles.cornerBR]} />
+    </>
+  );
+}
+
+// ─── Step indicator at top ───────────────────────────────────────────────────
+function StepBar({ currentStep }) {
+  // Show steps 1-4 (not 'done')
+  const visibleSteps = STEPS.slice(0, 4);
+  const idx = visibleSteps.findIndex(s => s.id === currentStep);
+  return (
+    <View style={styles.stepBar}>
+      {visibleSteps.map((step, i) => (
+        <React.Fragment key={step.id}>
+          <View style={styles.stepItem}>
+            <View style={[
+              styles.stepDot,
+              i < idx && styles.stepDotDone,
+              i === idx && styles.stepDotActive,
+            ]}>
+              {i < idx
+                ? <Text style={styles.stepDotText}>✓</Text>
+                : <Text style={[styles.stepDotText, i === idx && { color: '#fff' }]}>{i + 1}</Text>
+              }
+            </View>
+            <Text style={[styles.stepLabel, i === idx && styles.stepLabelActive]}>
+              {step.label}
+            </Text>
+          </View>
+          {i < 3 && <View style={[styles.stepLine, i < idx && styles.stepLineDone]} />}
+        </React.Fragment>
+      ))}
+    </View>
+  );
+}
+
+// ─── Review & Edit form ───────────────────────────────────────────────────────
+function ReviewForm({ scannedData, onConfirm, onRescan }) {
+  const [form, setForm] = useState({ ...scannedData });
+  const FREQ_OPTIONS = ['morning', 'afternoon', 'evening', 'night'];
+  const FREQ_ICONS  = { morning: '🌅', afternoon: '☀️', evening: '🌆', night: '🌙' };
+
+  const toggleFreq = (slot) => {
+    setForm(prev => {
+      const f = prev.frequency.includes(slot)
+        ? prev.frequency.filter(x => x !== slot)
+        : [...prev.frequency, slot];
+      return { ...prev, frequency: f };
+    });
+  };
+
+  // Determine source label for header
+  const sourceInfo = (() => {
+    if (form._source === 'barcode') return {
+      icon: '📊',
+      label: 'Barcode scan',
+      sub: 'Matched from drug database',
+      color: '#059669',
+    };
+    if (form._source === 'rotate') return {
+      icon: '🔄',
+      label: 'Rotation scan',
+      sub: 'Stitched from bottle rotation — please verify all fields',
+      color: '#B45309',
+    };
+    return {
+      icon: '📷',
+      label: 'Label scan',
+      sub: 'Scanned from prescription label — please verify all fields',
+      color: '#7C3AED',
+    };
+  })();
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.reviewScroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.reviewHeader}>
+          <Text style={styles.reviewTitle}>Review Scanned Info</Text>
+          <Text style={styles.reviewSub}>Correct anything that looks wrong before saving</Text>
+        </View>
+
+        {/* Source badge — improved with source-specific messaging */}
+        <View style={[styles.sourceBadge, { borderColor: sourceInfo.color + '55', backgroundColor: sourceInfo.color + '18' }]}>
+          <Text style={[styles.sourceBadgeText, { color: sourceInfo.color }]}>
+            {sourceInfo.icon} {sourceInfo.label}
+          </Text>
+          <Text style={[styles.sourceBadgeSub, { color: sourceInfo.color }]}>
+            {sourceInfo.sub}
+          </Text>
+        </View>
+
+        {/* NDC badge for barcode scans */}
+        {form._source === 'barcode' && form._ndc && (
+          <View style={styles.ndcBadge}>
+            <Text style={styles.ndcBadgeText}>
+              NDC: {form._ndc} · Database match ✓
+            </Text>
+          </View>
+        )}
+
+        {/* ── Field order: pharmacist bottle label order ── */}
+
+        {/* 1. Medication Name */}
+        <Field label="Medication Name *"
+          value={form.name} onChangeText={t => setForm(p => ({ ...p, name: t }))}
+          placeholder="e.g. Lisinopril" autoCapitalize="words"
+          style={{ fontSize: 20, fontWeight: '700' }} />
+
+        {/* 2. What it's for */}
+        <Field label="What it's for"
+          value={form.purpose} onChangeText={t => setForm(p => ({ ...p, purpose: t }))}
+          placeholder="e.g. High blood pressure" />
+
+        {/* 3. Dosage per pill */}
+        <Field label="Dosage (per pill)"
+          value={form.dosage} onChangeText={t => setForm(p => ({ ...p, dosage: t }))}
+          placeholder="e.g. 10mg" />
+
+        {/* 4. Pills per dose */}
+        <Field label="Pills per dose"
+          value={String(form.quantity ?? 1)}
+          onChangeText={t => setForm(p => ({ ...p, quantity: parseInt(t) || 1 }))}
+          placeholder="1" keyboardType="number-pad" />
+
+        {/* 5. When to take it */}
+        <Text style={styles.fieldLabel}>When to take it *</Text>
+        <View style={styles.freqGrid}>
+          {FREQ_OPTIONS.map(slot => {
+            const active = form.frequency?.includes(slot);
+            return (
+              <TouchableOpacity
+                key={slot}
+                style={[styles.freqBtn, active && styles.freqBtnActive]}
+                onPress={() => toggleFreq(slot)}
+              >
+                <Text style={styles.freqBtnIcon}>{FREQ_ICONS[slot]}</Text>
+                <Text style={[styles.freqBtnText, active && styles.freqBtnTextActive]}>
+                  {slot.charAt(0).toUpperCase() + slot.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 6. Directions from bottle */}
+        <Field label="Directions from bottle"
+          value={form.directions}
+          onChangeText={t => setForm(p => ({ ...p, directions: t }))}
+          placeholder="e.g. Take 1 tablet every morning"
+          multiline numberOfLines={3} />
+
+        {/* 7. Supply info group */}
+        <Text style={styles.supplySubheading}>Supply Info</Text>
+        <View style={styles.supplyRow}>
+          <View style={{ flex: 1 }}>
+            <Field label="Pills remaining"
+              value={String(form.pillsRemaining ?? '')}
+              onChangeText={t => setForm(p => ({ ...p, pillsRemaining: parseInt(t) || 0 }))}
+              placeholder="e.g. 30" keyboardType="number-pad" />
+          </View>
+          <View style={{ width: 10 }} />
+          <View style={{ flex: 1 }}>
+            <Field label="Days supply"
+              value={String(form.daysSupply ?? '')}
+              onChangeText={t => setForm(p => ({ ...p, daysSupply: parseInt(t) || 0 }))}
+              placeholder="e.g. 30" keyboardType="number-pad" />
+          </View>
+          <View style={{ width: 10 }} />
+          <View style={{ flex: 1 }}>
+            <Field label="Refills remaining"
+              value={String(form.refillsRemaining ?? '')}
+              onChangeText={t => setForm(p => ({ ...p, refillsRemaining: parseInt(t) || 0 }))}
+              placeholder="e.g. 3" keyboardType="number-pad" />
+          </View>
+        </View>
+
+        {/* Actions */}
+        <TouchableOpacity
+          style={styles.confirmBtn}
+          onPress={() => {
+            if (!form.name?.trim()) {
+              Alert.alert('Missing Info', 'Please enter the medication name.');
+              return;
+            }
+            if (!form.frequency?.length) {
+              Alert.alert('Missing Info', 'Please select when to take it.');
+              return;
+            }
+            onConfirm(form);
+          }}
+        >
+          <Text style={styles.confirmBtnText}>✓  Save Medication</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.rescanBtn} onPress={onRescan}>
+          <Text style={styles.rescanBtnText}>↩  Scan Again</Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+function Field({ label, ...props }) {
+  return (
+    <View style={styles.fieldWrap}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        style={[styles.fieldInput, props.multiline && styles.fieldInputMulti]}
+        placeholderTextColor={COLORS.textMuted}
+        {...props}
+      />
+    </View>
+  );
+}
+
+// ─── Main scanner screen ─────────────────────────────────────────────────────
+export default function ScannerScreen({ navigation, onMedicationScanned }) {
+  const [permission, requestPermission] = useCameraPermissions();
+  const [step, setStep] = useState('position');  // position | rotate | barcode | review | done
+  const [scanMode, setScanMode] = useState('label');
+  const [scannedData, setScannedData] = useState(null);
+  const [barcodeScanned, setBarcodeScanned] = useState(false);
+  const [rotateProgress, setRotateProgress] = useState(0);  // 0-100% rotation capture
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [barcodeSearching, setBarcodeSearching] = useState(false); // "Searching drug database..."
+  const [processingRotate, setProcessingRotate] = useState(false); // "Processing..." after rotate
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const cameraRef = useRef(null);
+
+  const currentStepObj = STEPS.find(s => s.id === step);
+
+  // ── Permission gate ──────────────────────────────────────────────────────
+  if (!permission) return <View style={styles.safe} />;
+
+  if (!permission.granted) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.permBox}>
+          <Text style={styles.permIcon}>📷</Text>
+          <Text style={styles.permTitle}>Camera Permission Needed</Text>
+          <Text style={styles.permSub}>
+            Always Near needs camera access to scan prescription labels and barcodes.
+          </Text>
+          <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
+            <Text style={styles.permBtnText}>Allow Camera Access</Text>
+          </TouchableOpacity>
+          {navigation && (
+            <TouchableOpacity style={styles.permCancelBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.permCancelText}>Not Now</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Barcode scanned callback ─────────────────────────────────────────────
+  const handleBarcodeScanned = ({ type, data }) => {
+    if (barcodeScanned || barcodeSearching) return;
+    setBarcodeScanned(true);
+    Vibration.vibrate(80);
+    setBarcodeSearching(true);
+
+    // Show "Searching drug database..." for 800ms, then show mock NDC result
+    setTimeout(() => {
+      setBarcodeSearching(false);
+      const mockNDCResult = {
+        name: 'Metformin',
+        dosage: '500mg',
+        quantity: 2,
+        purpose: 'Type 2 Diabetes',
+        directions: 'Take 2 tablets twice daily with meals to reduce stomach upset.',
+        pillsRemaining: 60,
+        pillsTotal: 60,
+        daysSupply: 30,
+        refillsRemaining: 3,
+        frequency: ['morning', 'evening'],
+        _source: 'barcode',
+        _ndc: '0093-1031-01',
+        _barcodeRaw: data,
+        _barcodeType: type,
+      };
+      setScannedData(mockNDCResult);
+      setStep('review');
+    }, 800);
+  };
+
+  // ── Start rotation capture ───────────────────────────────────────────────
+  const handleStartRotate = () => {
+    setIsCapturing(true);
+    setRotateProgress(0);
+    // Simulate progressive frame capture as user rotates bottle
+    // Production: captures frames via CameraView at intervals, stitches, runs OCR
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 12;
+      setRotateProgress(Math.min(progress, 100));
+      if (progress >= 100) {
+        clearInterval(interval);
+        setIsCapturing(false);
+        Vibration.vibrate([0, 80, 100, 80]);
+        // Simulate OCR result from stitched panoramic label
+        handleRotateDone();
+      }
+    }, 320);
+  };
+
+  const handleRotateDone = () => {
+    // Show "Processing..." spinner for 1 second (feels like real OCR)
+    setProcessingRotate(true);
+    setTimeout(() => {
+      setProcessingRotate(false);
+      const mockOCR = {
+        name: 'Lisinopril',
+        dosage: '10mg',
+        quantity: 1,
+        purpose: 'High blood pressure',
+        directions: 'Take 1 tablet by mouth once daily. Do not stop taking without consulting your doctor.',
+        pillsRemaining: 30,
+        pillsTotal: 30,
+        daysSupply: 30,
+        refillsRemaining: 5,
+        frequency: ['morning'],
+        _source: 'rotate',
+      };
+      setScannedData(mockOCR);
+      setStep('review');
+    }, 1000);
+  };
+
+  // ── Simulate single-frame label scan (mock OCR) ──────────────────────────
+  const handleLabelCapture = () => {
+    Vibration.vibrate(80);
+    setStep('rotate');
+  };
+
+  // ── Confirm and save ─────────────────────────────────────────────────────
+  const handleConfirm = (data) => {
+    if (onMedicationScanned) {
+      onMedicationScanned(data);
+    }
+    setStep('done');
+  };
+
+  // ── Rescan ───────────────────────────────────────────────────────────────
+  const handleRescan = () => {
+    setScannedData(null);
+    setBarcodeScanned(false);
+    setStep('position');
+  };
+
+  // ── Done screen ──────────────────────────────────────────────────────────
+  if (step === 'done') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.doneBox}>
+          <View style={styles.doneCheck}>
+            <Text style={styles.doneCheckText}>✓</Text>
+          </View>
+          <Text style={styles.doneTitle}>Medication Added!</Text>
+          <Text style={styles.doneSub}>
+            {scannedData?.name} has been added to your medication list.
+          </Text>
+          <TouchableOpacity style={styles.doneBtn} onPress={handleRescan}>
+            <Text style={styles.doneBtnText}>Scan Another</Text>
+          </TouchableOpacity>
+          {navigation && (
+            <TouchableOpacity style={styles.doneDismissBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.doneDismissText}>Done</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Review screen ────────────────────────────────────────────────────────
+  if (step === 'review' && scannedData) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: COLORS.background }]}>
+        {/* Back button */}
+        <View style={styles.reviewNav}>
+          <TouchableOpacity onPress={handleRescan} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>← Rescan</Text>
+          </TouchableOpacity>
+          <Text style={styles.reviewNavTitle}>Step 3 of 3</Text>
+          <View style={{ width: 80 }} />
+        </View>
+        <StepBar currentStep="review" />
+        <ReviewForm
+          scannedData={scannedData}
+          onConfirm={handleConfirm}
+          onRescan={handleRescan}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // ── Rotation step screen ─────────────────────────────────────────────────
+  if (step === 'rotate') {
+    return (
+      <View style={styles.cameraRoot}>
+        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
+        <View style={styles.overlay}>
+          <View style={styles.overlayTop} />
+          <View style={styles.overlayMiddleRow}>
+            <View style={styles.overlaySide} />
+            <View style={styles.scanBox}>
+              <ViewfinderCorners />
+              {isCapturing && <ScanLine active />}
+              {/* Rotation arc indicator */}
+              {isCapturing && (
+                <View style={styles.rotateArcWrap}>
+                  <View style={[styles.rotateArcFill, { width: `${rotateProgress}%` }]} />
+                </View>
+              )}
+            </View>
+            <View style={styles.overlaySide} />
+          </View>
+          <View style={styles.overlayBottom}>
+            <StepBar currentStep="rotate" />
+
+            {processingRotate ? (
+              /* Processing spinner — shown for 1s after rotate completes */
+              <View style={styles.processingBox}>
+                <Animated.View>
+                  <Text style={{ fontSize: 28, marginBottom: 10 }}>⚙️</Text>
+                </Animated.View>
+                <Text style={styles.processingText}>Processing...</Text>
+                <Text style={styles.processingSubText}>Stitching frames and reading label</Text>
+              </View>
+            ) : !isCapturing ? (
+              <>
+                <View style={styles.rotateTipBox}>
+                  <Text style={styles.rotateTipTitle}>📦 How to scan a curved bottle</Text>
+                  <Text style={styles.rotateTipText}>
+                    1. Hold bottle upright, label facing camera{'\n'}
+                    2. Tap Start, then <Text style={{fontWeight:'800'}}>slowly rotate</Text> the bottle{'\n'}
+                    3. Keep rotating until the bar fills up{'\n'}
+                    4. The app stitches all frames together
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.captureBtn} onPress={handleStartRotate}>
+                  <View style={[styles.captureBtnInner, { backgroundColor: COLORS.primary }]}>
+                    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800' }}>START</Text>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.hintText}>Keep rotating slowly... {rotateProgress}%</Text>
+                <View style={styles.captureProgressBar}>
+                  <View style={[styles.captureProgressFill, { width: `${rotateProgress}%` }]} />
+                </View>
+              </>
+            )}
+
+            {!processingRotate && (
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setStep('position')}>
+                <Text style={styles.cancelBtnText}>← Back</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Camera viewfinder ────────────────────────────────────────────────────
+  const isBarcode = scanMode === 'barcode';
+
+  return (
+    <View style={styles.cameraRoot}>
+      <CameraView
+        ref={cameraRef}
+        style={StyleSheet.absoluteFill}
+        facing="back"
+        onBarcodeScanned={isBarcode ? handleBarcodeScanned : undefined}
+        barcodeScannerSettings={isBarcode ? {
+          barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'datamatrix', 'pdf417'],
+        } : undefined}
+      />
+
+      {/* Darken everything outside the scan box */}
+      <View style={styles.overlay}>
+        {/* Top dark bar */}
+        <View style={styles.overlayTop} />
+        {/* Middle row */}
+        <View style={styles.overlayMiddleRow}>
+          <View style={styles.overlaySide} />
+          {/* The clear scan box */}
+          <View style={styles.scanBox}>
+            <ViewfinderCorners />
+            {!isBarcode && <ScanLine active />}
+          </View>
+          <View style={styles.overlaySide} />
+        </View>
+        {/* Bottom dark bar with controls */}
+        <View style={styles.overlayBottom}>
+          {/* Step bar */}
+          <StepBar currentStep={step} />
+
+          {/* Hint text */}
+          <Text style={styles.hintText}>{currentStepObj?.hint}</Text>
+
+          {/* Mode buttons */}
+          <View style={styles.modeToggleRow}>
+            <TouchableOpacity
+              style={[styles.modeBtn, !isBarcode && styles.modeBtnActive]}
+              onPress={() => { setScanMode('label'); setStep('position'); setBarcodeScanned(false); }}
+            >
+              <Text style={styles.modeBtnEmoji}>📷</Text>
+              <Text style={[styles.modeBtnText, !isBarcode && styles.modeBtnTextActive]}>Scan Label</Text>
+              <Text style={styles.modeBtnSub}>Rotate to capture</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeBtn, isBarcode && styles.modeBtnActive]}
+              onPress={() => { setScanMode('barcode'); setStep('barcode'); setBarcodeScanned(false); }}
+            >
+              <Text style={styles.modeBtnEmoji}>📊</Text>
+              <Text style={[styles.modeBtnText, isBarcode && styles.modeBtnTextActive]}>Scan Barcode</Text>
+              <Text style={styles.modeBtnSub}>Auto-detects</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Shutter / auto-scan status */}
+          {!isBarcode ? (
+            <TouchableOpacity
+              style={styles.captureBtn}
+              onPress={handleLabelCapture}
+              activeOpacity={0.85}
+            >
+              <View style={styles.captureBtnInner} />
+            </TouchableOpacity>
+          ) : barcodeSearching ? (
+            /* "Searching drug database..." loading state */
+            <View style={styles.barcodeSearchingBox}>
+              <ActivityIndicator color={COLORS.primary} size="small" style={{ marginRight: 10 }} />
+              <Text style={styles.barcodeSearchingText}>Searching drug database...</Text>
+            </View>
+          ) : (
+            <View style={styles.barcodeWaiting}>
+              <Text style={styles.barcodeWaitingText}>
+                {barcodeScanned
+                  ? '✅ Barcode detected!'
+                  : '🔍 Auto-scanning — point at any barcode on the bottle'}
+              </Text>
+            </View>
+          )}
+
+          {/* Cancel */}
+          {navigation && (
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ── Barcode data parser ────────────────────────────────────────────────────────
+function parseBarcodeData(data, type) {
+  // Real implementation would look up NDC codes in a drug database
+  // For prototype, return a realistic mock with the raw barcode data shown
+  return {
+    name: '',
+    dosage: '',
+    quantity: 1,
+    purpose: '',
+    directions: '',
+    pillsRemaining: 0,
+    pillsTotal: 0,
+    daysSupply: 30,
+    refillsRemaining: 0,
+    frequency: [],
+    _barcodeRaw: data,
+    _barcodeType: type,
+  };
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const OVERLAY_COLOR = 'rgba(0,0,0,0.72)';
+const CORNER_SIZE = 26;
+const CORNER_THICKNESS = 4;
+const CORNER_RADIUS = 6;
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#000' },
+  cameraRoot: { flex: 1, backgroundColor: '#000' },
+
+  // Overlay system
+  overlay: { ...StyleSheet.absoluteFillObject },
+  overlayTop: {
+    backgroundColor: OVERLAY_COLOR,
+    height: (height - SCAN_BOX_SIZE) / 2 - 60,
+  },
+  overlayMiddleRow: { flexDirection: 'row', height: SCAN_BOX_SIZE },
+  overlaySide: {
+    flex: 1,
+    backgroundColor: OVERLAY_COLOR,
+  },
+  scanBox: {
+    width: SCAN_BOX_SIZE,
+    height: SCAN_BOX_SIZE,
+    overflow: 'hidden',
+  },
+  overlayBottom: {
+    flex: 1,
+    backgroundColor: OVERLAY_COLOR,
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+
+  // Scan line
+  scanLine: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    height: 2.5,
+    backgroundColor: '#4ADE80',
+    shadowColor: '#4ADE80',
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+  },
+
+  // Corner brackets
+  corner: {
+    position: 'absolute',
+    width: CORNER_SIZE,
+    height: CORNER_SIZE,
+    borderColor: '#FFFFFF',
+  },
+  cornerTL: {
+    top: 0, left: 0,
+    borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS,
+    borderTopLeftRadius: CORNER_RADIUS,
+  },
+  cornerTR: {
+    top: 0, right: 0,
+    borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS,
+    borderTopRightRadius: CORNER_RADIUS,
+  },
+  cornerBL: {
+    bottom: 0, left: 0,
+    borderBottomWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS,
+    borderBottomLeftRadius: CORNER_RADIUS,
+  },
+  cornerBR: {
+    bottom: 0, right: 0,
+    borderBottomWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS,
+    borderBottomRightRadius: CORNER_RADIUS,
+  },
+
+  // Step bar
+  stepBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  stepItem: { alignItems: 'center', gap: 4 },
+  stepDot: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  stepDotActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  stepDotDone: { backgroundColor: '#4ADE80', borderColor: '#4ADE80' },
+  stepDotText: { fontSize: 12, fontWeight: '800', color: 'rgba(255,255,255,0.7)' },
+  stepLine: { width: 32, height: 2, backgroundColor: 'rgba(255,255,255,0.25)', marginBottom: 14 },
+  stepLineDone: { backgroundColor: '#4ADE80' },
+  stepLabel: { fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: '600' },
+  stepLabelActive: { color: '#fff' },
+
+  // Hint
+  hintText: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+
+  // Mode toggle
+  modeToggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+    width: '100%',
+  },
+  modeBtn: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+  },
+  modeBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  modeBtnEmoji: { fontSize: 22, marginBottom: 3 },
+  modeBtnText: { fontSize: 13, fontWeight: '800', color: 'rgba(255,255,255,0.7)' },
+  modeBtnTextActive: { color: '#fff' },
+  modeBtnSub: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+
+  // Rotation step
+  rotateTipBox: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 14, padding: 16, marginBottom: 16,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
+    width: '100%',
+  },
+  rotateTipTitle: { fontSize: 15, fontWeight: '800', color: '#fff', marginBottom: 8 },
+  rotateTipText: { fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 22 },
+  rotateArcWrap: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: 6, backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  rotateArcFill: { height: 6, backgroundColor: '#4ADE80' },
+  captureProgressBar: {
+    width: '90%', height: 8, backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 4, overflow: 'hidden', marginBottom: 16,
+  },
+  captureProgressFill: { height: 8, backgroundColor: '#4ADE80', borderRadius: 4 },
+
+  // Capture button (big circle shutter)
+  captureBtn: {
+    width: 74, height: 74, borderRadius: 37,
+    borderWidth: 3, borderColor: '#fff',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#fff',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  captureBtnInner: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: '#fff',
+  },
+
+  // Barcode auto scan
+  barcodeWaiting: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  barcodeWaitingText: {
+    fontSize: 14, color: '#fff', fontWeight: '600', textAlign: 'center',
+  },
+
+  // Cancel
+  cancelBtn: { paddingVertical: 8, paddingHorizontal: 20 },
+  cancelBtnText: { fontSize: 15, color: 'rgba(255,255,255,0.65)', fontWeight: '600' },
+
+  // Permission screen
+  permBox: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 32, backgroundColor: COLORS.background,
+  },
+  permIcon: { fontSize: 64, marginBottom: 20 },
+  permTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 10 },
+  permSub: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 28 },
+  permBtn: {
+    backgroundColor: COLORS.primary, borderRadius: 16,
+    paddingVertical: 18, paddingHorizontal: 32,
+    minWidth: '80%', alignItems: 'center',
+    shadowColor: COLORS.primary, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5,
+    marginBottom: 12,
+  },
+  permBtnText: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  permCancelBtn: { paddingVertical: 12 },
+  permCancelText: { fontSize: 16, color: COLORS.textMuted, fontWeight: '600' },
+
+  // Review screen nav
+  reviewNav: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 18, paddingVertical: 12,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  backBtn: { paddingVertical: 6, paddingHorizontal: 4 },
+  backBtnText: { fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  reviewNavTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textSecondary },
+
+  // Review form
+  reviewScroll: { padding: 20, paddingBottom: 48 },
+  reviewHeader: { marginBottom: 16 },
+  reviewTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary },
+  reviewSub: { fontSize: 15, color: COLORS.textMuted, marginTop: 3, lineHeight: 21 },
+
+  sourceBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 100, paddingVertical: 6, paddingHorizontal: 14,
+    alignSelf: 'flex-start', marginBottom: 18,
+    borderWidth: 1.5, borderColor: COLORS.primary + '44',
+  },
+  sourceBadgeText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+
+  // Form fields
+  fieldWrap: { marginBottom: 14 },
+  fieldLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 6 },
+  fieldInput: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 17, color: COLORS.textPrimary,
+    minHeight: 52,
+  },
+  fieldInputMulti: { minHeight: 90, textAlignVertical: 'top' },
+
+  // Frequency grid
+  freqGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  freqBtn: {
+    width: '47%', borderRadius: 14, borderWidth: 2,
+    borderColor: COLORS.primary, paddingVertical: 14, paddingHorizontal: 12,
+    backgroundColor: COLORS.background, alignItems: 'center',
+    flexDirection: 'row', gap: 8, justifyContent: 'center',
+    minHeight: 56,
+  },
+  freqBtnActive: { backgroundColor: COLORS.primary },
+  freqBtnIcon: { fontSize: 20 },
+  freqBtnText: { fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  freqBtnTextActive: { color: '#fff' },
+
+  // Action buttons
+  confirmBtn: {
+    backgroundColor: COLORS.primary, borderRadius: 16,
+    paddingVertical: 20, alignItems: 'center',
+    marginTop: 10, marginBottom: 10,
+    minHeight: 60, justifyContent: 'center',
+    shadowColor: COLORS.primary, shadowOpacity: 0.3,
+    shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 5,
+  },
+  confirmBtnText: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  rescanBtn: {
+    borderRadius: 16, paddingVertical: 16,
+    alignItems: 'center', borderWidth: 2, borderColor: COLORS.border,
+    marginBottom: 8, backgroundColor: COLORS.surface,
+  },
+  rescanBtnText: { fontSize: 17, fontWeight: '700', color: COLORS.textSecondary },
+
+  // Source badge sub-text
+  sourceBadgeSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 3,
+    lineHeight: 16,
+  },
+
+  // NDC badge
+  ndcBadge: {
+    backgroundColor: '#E8F8EE',
+    borderRadius: 100,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#A3DDB8',
+  },
+  ndcBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A7A4A',
+  },
+
+  // Supply info subheading & row
+  supplySubheading: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  supplyRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+
+  // Processing state (rotation)
+  processingBox: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 32,
+  },
+  processingText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 6,
+  },
+  processingSubText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+  },
+
+  // Barcode searching state
+  barcodeSearchingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  barcodeSearchingText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '700',
+  },
+
+  // Done screen
+  doneBox: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: COLORS.background, paddingHorizontal: 32,
+  },
+  doneCheck: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: COLORS.success, alignItems: 'center', justifyContent: 'center',
+    marginBottom: 24,
+    shadowColor: COLORS.success, shadowOpacity: 0.35,
+    shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8,
+  },
+  doneCheckText: { fontSize: 52, color: '#fff', fontWeight: '800' },
+  doneTitle: { fontSize: 28, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 8 },
+  doneSub: { fontSize: 17, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 25, marginBottom: 32 },
+  doneBtn: {
+    backgroundColor: COLORS.primary, borderRadius: 16,
+    paddingVertical: 18, paddingHorizontal: 40,
+    marginBottom: 12, minWidth: '70%', alignItems: 'center',
+    shadowColor: COLORS.primary, shadowOpacity: 0.3,
+    shadowRadius: 10, elevation: 5,
+  },
+  doneBtnText: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  doneDismissBtn: {
+    borderRadius: 16, paddingVertical: 14, paddingHorizontal: 40,
+    borderWidth: 2, borderColor: COLORS.border, minWidth: '70%', alignItems: 'center',
+  },
+  doneDismissText: { fontSize: 17, fontWeight: '700', color: COLORS.textSecondary },
+});
