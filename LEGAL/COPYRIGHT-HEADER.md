@@ -1,4 +1,4 @@
-# Copyright Header — Always Near
+# Copyright Header — In-dependent Living
 
 Add this block to the top of every source file.
 
@@ -6,7 +6,7 @@ Add this block to the top of every source file.
 
 ```javascript
 /**
- * Always Near — Independent Living Monitoring Application
+ * In-dependent Living — Independent Living Monitoring Application
  * Copyright © 2026 Theory Solutions LLC. All rights reserved.
  *
  * PROPRIETARY AND CONFIDENTIAL
@@ -33,7 +33,7 @@ Add a top-level field:
 Run this from the project root to prepend the header to every .js file:
 
 ```bash
-HEADER='/**\n * Always Near — Independent Living Monitoring Application\n * Copyright © 2026 Theory Solutions LLC. All rights reserved.\n *\n * PROPRIETARY AND CONFIDENTIAL\n */\n\n'
+HEADER='/**\n * In-dependent Living — Independent Living Monitoring Application\n * Copyright © 2026 Theory Solutions LLC. All rights reserved.\n *\n * PROPRIETARY AND CONFIDENTIAL\n */\n\n'
 
 find src -name "*.js" | while read file; do
   echo -e "$HEADER$(cat $file)" > $file

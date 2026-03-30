@@ -1,5 +1,5 @@
 /**
- * Always Near — Independent Living Monitoring Application
+ * In-dependent Living — Independent Living Monitoring Application
  * Copyright © 2026 Theory Solutions LLC. All rights reserved.
  *
  * PROPRIETARY AND CONFIDENTIAL
@@ -311,7 +311,7 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
           <Text style={styles.permIcon}>📷</Text>
           <Text style={styles.permTitle}>Camera Permission Needed</Text>
           <Text style={styles.permSub}>
-            Always Near needs camera access to scan prescription labels and barcodes.
+            In-dependent Living needs camera access to scan prescription labels and barcodes.
           </Text>
           <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
             <Text style={styles.permBtnText}>Allow Camera Access</Text>

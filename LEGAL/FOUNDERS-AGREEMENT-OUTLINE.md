@@ -1,4 +1,4 @@
-# FOUNDERS AGREEMENT — Always Near / Theory Solutions LLC
+# FOUNDERS AGREEMENT — In-dependent Living / Theory Solutions LLC
 
 **⚠️ NOTICE: This is a framework outline for discussion. Have a licensed attorney draft the final document.**
 
@@ -13,7 +13,7 @@ A Founders Agreement answers the hard questions *before* money or success makes 
 - What is each person's role and expected contribution?
 - What happens if someone wants to sell their share?
 
-If Always Near becomes valuable (and it will), a clear agreement protects everyone — including friendships.
+If In-dependent Living becomes valuable (and it will), a clear agreement protects everyone — including friendships.
 
 ---
 
@@ -32,7 +32,7 @@ If Always Near becomes valuable (and it will), a clear agreement protects everyo
 ## SECTION 1: OWNERSHIP STRUCTURE
 
 ### 1.1 IP Ownership
-All intellectual property related to Always Near — including source code, designs, trademarks, trade secrets, and business processes — is exclusively owned by **Theory Solutions LLC**.
+All intellectual property related to In-dependent Living — including source code, designs, trademarks, trade secrets, and business processes — is exclusively owned by **Theory Solutions LLC**.
 
 ### 1.2 Equity Allocation
 *(To be negotiated and agreed upon — suggested framework below)*
@@ -130,11 +130,11 @@ No founder may sell, transfer, or pledge their equity to any third party without
 
 Each founder agrees to:
 
-**Confidentiality:** Not disclose any proprietary information about Always Near, its technology, users, or business strategy — during or after their involvement.
+**Confidentiality:** Not disclose any proprietary information about In-dependent Living, its technology, users, or business strategy — during or after their involvement.
 
 **Non-compete:** During their active involvement and for **[12-24 months]** after departure, not directly compete by building or joining a competing independent living / senior monitoring application.
 
-**Non-solicitation:** For **[12 months]** after departure, not solicit employees, contractors, or customers of Always Near / Theory Solutions LLC.
+**Non-solicitation:** For **[12 months]** after departure, not solicit employees, contractors, or customers of In-dependent Living / Theory Solutions LLC.
 
 ---
 
@@ -153,7 +153,7 @@ Each founder agrees to:
 ## SECTION 9: INTELLECTUAL PROPERTY ASSIGNMENT
 
 Each founder explicitly assigns to Theory Solutions LLC:
-- All code written for Always Near
+- All code written for In-dependent Living
 - All designs, wireframes, and creative work
 - Any inventions, innovations, or improvements related to the product
 - Any work created on company time or using company resources

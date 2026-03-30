@@ -19,7 +19,7 @@ collectively referred to as the "Parties."
 
 ## 1. PURPOSE
 
-The Parties wish to explore a potential business relationship in connection with the development, marketing, and commercialization of the "Always Near" mobile application and related technology (the "Purpose"). In connection with the Purpose, each Party may disclose to the other certain confidential and proprietary information.
+The Parties wish to explore a potential business relationship in connection with the development, marketing, and commercialization of the "In-dependent Living" mobile application and related technology (the "Purpose"). In connection with the Purpose, each Party may disclose to the other certain confidential and proprietary information.
 
 ---
 
@@ -29,7 +29,7 @@ The Parties wish to explore a potential business relationship in connection with
 
 Confidential Information includes, without limitation:
 
-- Source code, algorithms, software architecture, and technical documentation for Always Near
+- Source code, algorithms, software architecture, and technical documentation for In-dependent Living
 - Business plans, financial projections, revenue models, and pricing strategies
 - User data, research, and product roadmaps
 - Marketing strategies, vendor relationships, and partnership terms
@@ -67,7 +67,7 @@ e) Is required to be disclosed by law or court order (with prompt prior written 
 
 Nothing in this Agreement grants either Party any rights in the other Party's Confidential Information except as expressly stated. All Confidential Information remains the exclusive property of the disclosing Party.
 
-**Any work product, code, designs, or inventions created by Recipient in connection with the Always Near project shall be considered "work for hire" and shall be the exclusive property of Theory Solutions LLC**, unless a separate written agreement explicitly states otherwise.
+**Any work product, code, designs, or inventions created by Recipient in connection with the In-dependent Living project shall be considered "work for hire" and shall be the exclusive property of Theory Solutions LLC**, unless a separate written agreement explicitly states otherwise.
 
 ---
 

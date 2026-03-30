@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Always Near",
-    "slug": "always-near",
+    "name": "In-dependent Living",
+    "slug": "in-dependent-living",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,8 +14,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Always Near uses the camera to scan prescription bottle labels and barcodes so your medications can be added automatically.",
-        "NSMicrophoneUsageDescription": "Microphone access is required by the camera system."
+        "NSCameraUsageDescription": "In-dependent Living uses the camera to scan prescription bottle labels and barcodes so your medications can be added automatically.",
+        "NSMicrophoneUsageDescription": "Microphone access is required by the camera system.",
+        "NSPhotoLibraryUsageDescription": "In-dependent Living uses your photo library so caregivers can upload a profile photo for their loved one."
       }
     },
     "android": {
@@ -35,7 +36,21 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Always Near uses the camera to scan prescription bottle labels and barcodes."
+          "cameraPermission": "In-dependent Living uses the camera to scan prescription bottle labels and barcodes."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "In-dependent Living uses your photo library so caregivers can upload a profile photo for their loved one."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1A6FA3",
+          "sounds": []
         }
       ]
     ]

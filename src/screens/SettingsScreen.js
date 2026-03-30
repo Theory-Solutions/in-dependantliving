@@ -183,7 +183,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>🔒 Privacy</Text>
           <Text style={styles.privacyText}>
-            <Text style={styles.bold}>Your data stays on your device.</Text> Always Near does not store, sell, or share your health information with any third party. All medications, check-ins, and activity data are stored locally on this phone only.
+            <Text style={styles.bold}>Your data stays on your device.</Text> In-dependent Living does not store, sell, or share your health information with any third party. All medications, check-ins, and activity data are stored locally on this phone only.
           </Text>
           <Text style={styles.privacyText}>
             For support: Theory Solutions LLC
@@ -210,7 +210,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {/* Footer */}
-        <Text style={styles.footer}>Always Near v1.0.0 · © 2026 Theory Solutions LLC</Text>
+        <Text style={styles.footer}>In-dependent Living v1.0.0 · © 2026 Theory Solutions LLC</Text>
 
       </ScrollView>
     </SafeAreaView>

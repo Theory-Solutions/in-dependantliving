@@ -27,8 +27,8 @@ export default function OnboardingScreen() {
               <Text style={styles.logoEmoji}>💙</Text>
             </View>
           </View>
-          <Text style={styles.appName}>Always Near</Text>
-          <Text style={styles.tagline}>Stay connected. Stay safe.</Text>
+          <Text style={styles.appName}>In-dependent Living</Text>
+          <Text style={styles.tagline}>Live independently. Stay connected.</Text>
         </View>
 
         {/* Bottom sheet style card */}

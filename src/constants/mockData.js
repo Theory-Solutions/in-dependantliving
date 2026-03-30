@@ -1,5 +1,5 @@
 /**
- * Always Near — Independent Living Monitoring Application
+ * In-dependent Living — Independent Living Monitoring Application
  * Copyright © 2026 Theory Solutions LLC. All rights reserved.
  *
  * PROPRIETARY AND CONFIDENTIAL

@@ -1,5 +1,5 @@
 /**
- * Always Near — Independent Living Monitoring Application
+ * In-dependent Living — Independent Living Monitoring Application
  * Copyright © 2026 Theory Solutions LLC. All rights reserved.
  *
  * PROPRIETARY AND CONFIDENTIAL
@@ -28,11 +28,17 @@ const { width } = Dimensions.get('window');
 const today = new Date();
 const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
+const nextMonth = new Date(today); nextMonth.setMonth(today.getMonth() + 1);
+const threeMonths = new Date(today); threeMonths.setMonth(today.getMonth() + 3);
+const sixMonths = new Date(today); sixMonths.setMonth(today.getMonth() + 6);
 
 function dateLabel(key) {
   if (key === 'today') return today.toISOString().split('T')[0];
   if (key === 'tomorrow') return tomorrow.toISOString().split('T')[0];
   if (key === 'next_week') return nextWeek.toISOString().split('T')[0];
+  if (key === 'next_month') return nextMonth.toISOString().split('T')[0];
+  if (key === 'three_months') return threeMonths.toISOString().split('T')[0];
+  if (key === 'six_months') return sixMonths.toISOString().split('T')[0];
   return key;
 }
 
@@ -46,6 +52,13 @@ const MOCK_EVENTS = [
   { id: '7', title: 'Call with David', date: 'tomorrow', time: '4:00 PM', category: 'family', isPrivate: false, color: '#0D9488' },
   { id: '8', title: 'Lunch with Carol', date: 'next_week', time: '12:00 PM', category: 'social', isPrivate: true, location: 'La Paloma Cafe', color: '#DB2777' },
   { id: '9', title: 'Dentist Checkup', date: 'next_week', time: '9:30 AM', category: 'appointment', isPrivate: false, location: 'Tucson Dental', color: '#7C3AED', needsRide: true },
+  { id: '10', title: "Timmy's Birthday", date: 'next_week', time: '12:00 PM', category: 'social', isPrivate: false, color: '#DB2777', reminderType: 'Birthday', reminder: '1 week', notes: 'Call him!' },
+  { id: '11', title: 'Car Registration Due', date: 'next_week', time: '12:00 PM', category: 'errand', isPrivate: false, color: '#B45309', reminderType: 'Renewal/Expiry', reminder: '1 week' },
+  { id: '12', title: 'Pick Up Dry Cleaning', date: 'today', time: '3:00 PM', category: 'errand', isPrivate: false, color: '#B45309', reminderType: 'Errand' },
+  { id: '13', title: 'Annual Eye Exam', date: 'next_month', time: '10:00 AM', category: 'appointment', isPrivate: false, color: '#7C3AED', location: 'Tucson Eye Care', reminder: '1 day' },
+  { id: '14', title: 'Passport Renewal Deadline', date: 'three_months', time: '12:00 PM', category: 'errand', isPrivate: false, color: '#B45309', reminderType: 'Renewal/Expiry', reminder: '1 week', notes: 'Expires — must renew before trip' },
+  { id: '15', title: 'Family Reunion — Phoenix', date: 'three_months', time: '10:00 AM', category: 'family', isPrivate: false, color: '#0D9488', location: 'Phoenix, AZ', reminder: '3 days' },
+  { id: '16', title: 'Alaska Cruise Departure', date: 'six_months', time: '8:00 AM', category: 'social', isPrivate: false, color: '#DB2777', location: 'Seattle, WA — Pier 91', reminder: '1 week', notes: 'Book travel insurance!' },
 ];
 
 // ─── Category definitions ────────────────────────────────────────────────────
@@ -72,18 +85,40 @@ function formatGroupLabel(dateStr) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
+// Convert any date string to ISO YYYY-MM-DD
+function toISODate(dateStr) {
+  if (!dateStr) return '';
+  // Already ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  // Keyword aliases
+  const resolved = dateLabel(dateStr);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(resolved)) return resolved;
+  // Try parsing natural language like "April 30, 2026" or "April 30"
+  const thisYear = new Date().getFullYear();
+  const withYear = dateStr.includes(',') ? dateStr : `${dateStr}, ${thisYear}`;
+  const parsed = new Date(withYear);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toISOString().split('T')[0];
+  }
+  return dateStr; // fallback — return as-is
+}
+
 function groupEventsByDate(events) {
   const groups = {};
+  const todayStr = new Date().toISOString().split('T')[0];
   const sorted = [...events].sort((a, b) => {
-    const da = dateLabel(a.date);
-    const db = dateLabel(b.date);
+    const da = toISODate(a.date);
+    const db = toISODate(b.date);
     if (da !== db) return da < db ? -1 : 1;
-    return a.time.localeCompare(b.time);
+    return (a.time || '').localeCompare(b.time || '');
   });
   for (const ev of sorted) {
-    const key = dateLabel(ev.date);
+    const key = toISODate(ev.date);
+    if (!key) continue;
+    // Events with no time on past days roll to today at midnight
+    // Events with a time stay on their scheduled date
     if (!groups[key]) groups[key] = [];
-    groups[key].push(ev);
+    groups[key].push({ ...ev, date: key }); // normalize date in place
   }
   return groups;
 }
@@ -131,7 +166,7 @@ function PulsingCircle() {
 
 // ─── Event card ──────────────────────────────────────────────────────────────
 
-function EventCard({ event, onPress, isExpanded }) {
+function EventCard({ event, onPress, isExpanded, onEdit }) {
   const cat = CATEGORIES.find(c => c.key === event.category);
   const color = event.color || cat?.color || COLORS.primary;
 
@@ -225,7 +260,7 @@ function EventCard({ event, onPress, isExpanded }) {
           )}
 
           <View style={styles.eventDetailActions}>
-            <TouchableOpacity style={styles.editBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.editBtn} activeOpacity={0.8} onPress={() => onEdit && onEdit(event)}>
               <Ionicons name="pencil" size={16} color={COLORS.primary} />
               <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
@@ -258,7 +293,7 @@ function WeekGrid({ events }) {
       <View style={{ flexDirection: 'row', paddingHorizontal: 8, paddingTop: 12 }}>
         {weekDays.map((day, i) => {
           const dayStr = day.toISOString().split('T')[0];
-          const dayEvents = events.filter(ev => dateLabel(ev.date) === dayStr);
+          const dayEvents = events.filter(ev => toISODate(ev.date) === dayStr);
           const isToday = i === 0;
 
           return (
@@ -294,7 +329,178 @@ function WeekGrid({ events }) {
 // ─── Add event form (bottom sheet modal) ────────────────────────────────────
 
 const RECURRING_OPTIONS = ['None', 'Daily', 'Weekly', 'Monthly'];
-const REMINDER_OPTIONS = ['None', '30 min', '1 hour', '2 hours', '1 day'];
+const REMINDER_OPTIONS = ['None', '30 min', '1 hour', '2 hours', '1 day', '3 days', '1 week'];
+
+const PICKER_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const PICKER_DAY_LABELS = ['S','M','T','W','T','F','S'];
+
+// ─── Inline date picker (no native module needed) ─────────────────────────────
+function InlineDatePicker({ value, onChange }) {
+  const initDate = value ? new Date(value + 'T12:00:00') : new Date();
+  const [pickerMonth, setPickerMonth] = useState(initDate.getMonth());
+  const [pickerYear, setPickerYear] = useState(initDate.getFullYear());
+  const [open, setOpen] = useState(false);
+
+  const selectedISO = value; // YYYY-MM-DD
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  const prevPickerMonth = () => {
+    if (pickerMonth === 0) { setPickerMonth(11); setPickerYear(y => y - 1); }
+    else setPickerMonth(m => m - 1);
+  };
+  const nextPickerMonth = () => {
+    if (pickerMonth === 11) { setPickerMonth(0); setPickerYear(y => y + 1); }
+    else setPickerMonth(m => m + 1);
+  };
+
+  const daysInMonth = new Date(pickerYear, pickerMonth + 1, 0).getDate();
+  const firstDayOfWeek = new Date(pickerYear, pickerMonth, 1).getDay();
+  const cells = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const handleDayPress = (day) => {
+    const iso = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    onChange(iso);
+    setOpen(false);
+  };
+
+  const displayValue = value
+    ? new Date(value + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })
+    : '';
+
+  return (
+    <View style={pickerStyles.wrap}>
+      {/* Tap to open picker */}
+      <TouchableOpacity
+        style={[pickerStyles.trigger, open && pickerStyles.triggerOpen]}
+        onPress={() => setOpen(v => !v)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="calendar" size={20} color={open ? COLORS.primary : COLORS.textMuted} style={{ marginRight: 10 }} />
+        <Text style={[pickerStyles.triggerText, !value && pickerStyles.triggerPlaceholder]}>
+          {displayValue || 'Tap to select a date'}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textMuted} />
+      </TouchableOpacity>
+
+      {/* Calendar panel */}
+      {open && (
+        <View style={pickerStyles.panel}>
+          {/* Month nav */}
+          <View style={pickerStyles.navRow}>
+            <TouchableOpacity onPress={prevPickerMonth} style={pickerStyles.navBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.primary} />
+            </TouchableOpacity>
+            <Text style={pickerStyles.navTitle}>{PICKER_MONTH_NAMES[pickerMonth]} {pickerYear}</Text>
+            <TouchableOpacity onPress={nextPickerMonth} style={pickerStyles.navBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-forward" size={22} color={COLORS.primary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Day headers */}
+          <View style={pickerStyles.dayLabels}>
+            {PICKER_DAY_LABELS.map((d, i) => (
+              <Text key={i} style={pickerStyles.dayLabel}>{d}</Text>
+            ))}
+          </View>
+
+          {/* Grid */}
+          <View style={pickerStyles.grid}>
+            {cells.map((day, i) => {
+              if (!day) return <View key={`e-${i}`} style={pickerStyles.cell} />;
+              const iso = `${pickerYear}-${String(pickerMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const isSelected = iso === selectedISO;
+              const isToday = iso === todayISO;
+              const isPast = iso < todayISO;
+              return (
+                <TouchableOpacity
+                  key={iso}
+                  style={[
+                    pickerStyles.cell,
+                    isSelected && pickerStyles.cellSelected,
+                    isToday && !isSelected && pickerStyles.cellToday,
+                    isPast && pickerStyles.cellPast,
+                  ]}
+                  onPress={() => handleDayPress(day)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[
+                    pickerStyles.cellText,
+                    isSelected && pickerStyles.cellTextSelected,
+                    isToday && !isSelected && pickerStyles.cellTextToday,
+                    isPast && pickerStyles.cellTextPast,
+                  ]}>
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Today shortcut */}
+          <TouchableOpacity
+            style={pickerStyles.todayBtn}
+            onPress={() => { onChange(todayISO); setOpen(false); }}
+          >
+            <Text style={pickerStyles.todayBtnText}>Go to Today</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const pickerStyles = StyleSheet.create({
+  wrap: { marginBottom: 16 },
+  trigger: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 14, minHeight: 52,
+  },
+  triggerOpen: { borderColor: COLORS.primary },
+  triggerText: { flex: 1, fontSize: 17, color: COLORS.textPrimary, fontWeight: '500' },
+  triggerPlaceholder: { color: COLORS.textMuted },
+  panel: {
+    backgroundColor: COLORS.surface, borderRadius: 14,
+    borderWidth: 1.5, borderColor: COLORS.primary,
+    padding: 12, marginTop: 4,
+    shadowColor: COLORS.shadowColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12, shadowRadius: 10, elevation: 5,
+  },
+  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  navBtn: { padding: 4 },
+  navTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  dayLabels: { flexDirection: 'row', marginBottom: 4 },
+  dayLabel: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '700', color: COLORS.textMuted },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  cell: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center', padding: 2 },
+  cellSelected: { backgroundColor: COLORS.primary, borderRadius: 100 },
+  cellToday: { borderWidth: 1.5, borderColor: COLORS.primary, borderRadius: 100 },
+  cellPast: { opacity: 0.38 },
+  cellText: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  cellTextSelected: { color: '#fff', fontWeight: '800' },
+  cellTextToday: { color: COLORS.primary, fontWeight: '800' },
+  cellTextPast: { color: COLORS.textMuted },
+  todayBtn: {
+    marginTop: 10, paddingVertical: 8, alignItems: 'center',
+    borderTopWidth: 1, borderTopColor: COLORS.divider,
+  },
+  todayBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
+});
+
+const KEYWORD_MAP = [
+  { keywords: ['doctor', 'dr.', 'dr ', 'physician', 'clinic', 'hospital', 'checkup', 'appointment', 'dentist', 'dental', 'eye', 'optom'], category: 'appointment' },
+  { keywords: ['hair', 'haircut', 'salon', 'barber', 'nails', 'manicure', 'pedicure', 'spa'], category: 'hair' },
+  { keywords: ['gym', 'exercise', 'workout', 'yoga', 'swim', 'aerobics', 'walk', 'jog', 'run', 'pilates', 'class'], category: 'activity' },
+  { keywords: ['lunch', 'dinner', 'breakfast', 'brunch', 'eat', 'restaurant', 'cafe', 'dining', 'food'], category: 'dining' },
+  { keywords: ['call', 'phone', 'family', 'kids', 'grandkids', 'son', 'daughter', 'mom', 'dad'], category: 'family' },
+  { keywords: ['bridge', 'bingo', 'book club', 'club', 'party', 'friend', 'social', 'visit', 'meet'], category: 'social' },
+  { keywords: ['errand', 'grocery', 'store', 'shopping', 'bank', 'post office', 'dry cleaning', 'pickup', 'pick up'], category: 'errand' },
+  { keywords: ['medication', 'medicine', 'pill', 'med', 'rx', 'pharmacy', 'prescription'], category: 'meds' },
+];
 
 function AddEventModal({ visible, onClose, onSave, initialData }) {
   const [form, setForm] = useState({
@@ -312,17 +518,44 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
   });
 
   useEffect(() => {
-    if (visible && initialData) {
-      setForm(prev => ({ ...prev, ...initialData }));
+    if (visible) {
+      setForm({
+        title: '',
+        category: null,
+        date: '',
+        time: '',
+        location: '',
+        notes: '',
+        recurring: 'None',
+        reminder: 'None',
+        needsRide: false,
+        isPrivate: false,
+        ...initialData,
+      });
     }
-  }, [visible, initialData]);
+  }, [visible]);
 
   const setField = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
   const handleCategoryChip = (cat) => {
-    setField('category', cat.key);
+    setForm(prev => ({ ...prev, category: cat.key, _autoCategory: false }));
     if (!form.title || CATEGORIES.some(c => c.titlePre === form.title)) {
       setField('title', cat.titlePre);
+    }
+  };
+
+  const handleTitleChange = (text) => {
+    setField('title', text);
+    // Only auto-detect if user hasn't manually selected a category
+    if (!form.category || form._autoCategory) {
+      const lower = text.toLowerCase();
+      for (const { keywords, category } of KEYWORD_MAP) {
+        if (keywords.some(kw => lower.includes(kw))) {
+          const cat = CATEGORIES.find(c => c.key === category);
+          setForm(prev => ({ ...prev, title: text, category, _autoCategory: true, color: cat?.color }));
+          return;
+        }
+      }
     }
   };
 
@@ -331,16 +564,17 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
       Alert.alert('Missing Info', 'Please enter an event title.');
       return;
     }
-    if (!form.date.trim()) {
-      Alert.alert('Missing Info', 'Please enter a date.');
+    if (!form.date) {
+      Alert.alert('Missing Info', 'Please select a date.');
       return;
     }
     const cat = CATEGORIES.find(c => c.key === form.category);
+    const isoDate = toISODate(form.date);
     onSave({
-      id: String(Date.now()),
+      id: form.id || String(Date.now()),
       ...form,
-      date: form.date,
-      color: cat?.color || COLORS.primary,
+      date: isoDate, // always save as YYYY-MM-DD
+      color: cat?.color || form.color || COLORS.primary,
     });
     onClose();
   };
@@ -353,7 +587,7 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
           <TouchableOpacity onPress={onClose} style={styles.formHeaderCancel}>
             <Text style={styles.formHeaderCancelText}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.formHeaderTitle}>Add Event</Text>
+          <Text style={styles.formHeaderTitle}>{initialData?.id ? 'Edit Event' : 'Add Event'}</Text>
           <TouchableOpacity onPress={handleSave} style={styles.formHeaderSave}>
             <Text style={styles.formHeaderSaveText}>Save</Text>
           </TouchableOpacity>
@@ -395,20 +629,22 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
             <TextInput
               style={styles.formInput}
               value={form.title}
-              onChangeText={t => setField('title', t)}
+              onChangeText={handleTitleChange}
               placeholder="What's happening?"
               placeholderTextColor={COLORS.textMuted}
               autoCapitalize="sentences"
             />
+            {form._autoCategory && form.category && (
+              <View style={styles.autoDetectBadge}>
+                <Text style={styles.autoDetectText}>✨ Auto-detected — tap a chip to change</Text>
+              </View>
+            )}
 
-            {/* Date */}
+            {/* Date — inline calendar picker */}
             <Text style={styles.formLabel}>Date *</Text>
-            <TextInput
-              style={styles.formInput}
+            <InlineDatePicker
               value={form.date}
-              onChangeText={t => setField('date', t)}
-              placeholder="e.g. April 15, 2026"
-              placeholderTextColor={COLORS.textMuted}
+              onChange={iso => setField('date', iso)}
             />
 
             {/* Time */}
@@ -475,6 +711,22 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
               ))}
             </View>
 
+            {/* Reminder Type */}
+            <Text style={styles.formLabel}>Reminder Type</Text>
+            <View style={[styles.chipRow, { marginBottom: 18 }]}>
+              {['Event Reminder', 'Birthday', 'Renewal/Expiry', 'Errand', 'Task'].map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.optChip, form.reminderType === type && styles.optChipActive]}
+                  onPress={() => setField('reminderType', type)}
+                >
+                  <Text style={[styles.optChipText, form.reminderType === type && styles.optChipTextActive]}>
+                    {type === 'Birthday' ? '🎂 ' : type === 'Renewal/Expiry' ? '📋 ' : type === 'Errand' ? '🚗 ' : type === 'Task' ? '✅ ' : '⏰ '}{type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {/* Transportation */}
             <View style={styles.toggleRow}>
               <View style={styles.toggleInfo}>
@@ -502,15 +754,14 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
               <Switch
                 value={form.category === 'meds' ? false : form.isPrivate}
                 onValueChange={v => {
-                  if (form.category === 'meds') {
+                  if (form.category !== 'meds') {
+                    setField('isPrivate', v);
+                  } else {
                     Alert.alert('Always Visible', 'Medication events are always shared for safety.');
-                    return;
                   }
-                  setField('isPrivate', v);
                 }}
                 trackColor={{ false: COLORS.border, true: '#DB2777' }}
                 thumbColor="#fff"
-                disabled={form.category === 'meds'}
               />
             </View>
 
@@ -529,6 +780,7 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
 
 function VoiceModal({ visible, onClose, onParsed }) {
   const [inputText, setInputText] = useState('');
+  const [parsed, setParsed] = useState(null);
 
   const hints = [
     '"Girls Bridge, Saturday April 11th, 9am at 49er\'s"',
@@ -537,21 +789,25 @@ function VoiceModal({ visible, onClose, onParsed }) {
   ];
 
   const handleParse = () => {
-    const parsed = parseEventText(inputText);
-    if (!parsed.title && !parsed.date) {
+    const result = parseEventText(inputText);
+    if (!result.title && !result.date) {
       Alert.alert('Could not parse', 'Try typing something like: "Doctor Smith, Tuesday the 15th at 2:30"');
       return;
     }
-    onParsed(parsed);
+    setParsed(result);
+  };
+
+  const handleClose = () => {
+    setParsed(null);
     setInputText('');
     onClose();
   };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
         <View style={styles.voiceHeader}>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity onPress={handleClose}>
             <Text style={styles.voiceClose}>Close</Text>
           </TouchableOpacity>
           <Text style={styles.voiceTitle}>Add by Voice</Text>
@@ -572,24 +828,50 @@ function VoiceModal({ visible, onClose, onParsed }) {
             ))}
           </View>
 
-          <Text style={styles.formLabel}>Or type it here</Text>
-          <TextInput
-            style={[styles.formInput, { marginHorizontal: 20 }]}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder='e.g. "Hair appointment, April 23rd, 11am"'
-            placeholderTextColor={COLORS.textMuted}
-            autoCapitalize="sentences"
-            multiline
-          />
+          {parsed ? (
+            <View style={styles.parsedPreview}>
+              <Text style={styles.parsedTitle}>✨ Here's what I heard:</Text>
+              {parsed.title ? <Text style={styles.parsedItem}>📌 {parsed.title}</Text> : null}
+              {parsed.date ? <Text style={styles.parsedItem}>📅 {parsed.date}</Text> : null}
+              {parsed.time ? <Text style={styles.parsedItem}>🕐 {parsed.time}</Text> : null}
+              {parsed.location ? <Text style={styles.parsedItem}>📍 {parsed.location}</Text> : null}
+              <View style={styles.parsedActions}>
+                <TouchableOpacity
+                  style={styles.parsedConfirm}
+                  onPress={() => { onParsed(parsed); setParsed(null); setInputText(''); onClose(); }}
+                >
+                  <Text style={styles.parsedConfirmText}>✓ Looks right — Add Event</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.parsedEdit}
+                  onPress={() => { onParsed(parsed); setParsed(null); setInputText(''); onClose(); }}
+                >
+                  <Text style={styles.parsedEditText}>✏️ Edit details first</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.formLabel}>Or type it here</Text>
+              <TextInput
+                style={[styles.formInput, { marginHorizontal: 20, alignSelf: 'stretch' }]}
+                value={inputText}
+                onChangeText={setInputText}
+                placeholder='e.g. "Hair appointment, April 23rd, 11am"'
+                placeholderTextColor={COLORS.textMuted}
+                autoCapitalize="sentences"
+                multiline
+              />
 
-          <TouchableOpacity
-            style={[styles.saveBtn, { marginHorizontal: 20, marginTop: 16, opacity: inputText.trim() ? 1 : 0.5 }]}
-            onPress={handleParse}
-            disabled={!inputText.trim()}
-          >
-            <Text style={styles.saveBtnText}>Parse & Review</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveBtn, { marginHorizontal: 20, marginTop: 16, opacity: inputText.trim() ? 1 : 0.5 }]}
+                onPress={handleParse}
+                disabled={!inputText.trim()}
+              >
+                <Text style={styles.saveBtnText}>Parse & Review</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     </Modal>
@@ -703,32 +985,169 @@ function CardScannerModal({ visible, onClose, onScanned }) {
   );
 }
 
+// ─── Month calendar view ─────────────────────────────────────────────────────
+
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function MonthView({ events, onDayPress }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showJumper, setShowJumper] = useState(false);
+
+  const prevMonth = () => {
+    const d = new Date(currentMonth);
+    d.setMonth(d.getMonth() - 1);
+    setCurrentMonth(d);
+  };
+  const nextMonth = () => {
+    const d = new Date(currentMonth);
+    d.setMonth(d.getMonth() + 1);
+    setCurrentMonth(d);
+  };
+  const jumpTo = (year, month) => {
+    setCurrentMonth(new Date(year, month, 1));
+    setShowJumper(false);
+  };
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const cells = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  // Build 3 years of jump targets: this year, next year, year after
+  const thisYear = new Date().getFullYear();
+  const jumpYears = [thisYear, thisYear + 1, thisYear + 2];
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Month navigator */}
+      <View style={styles.monthNav}>
+        <TouchableOpacity onPress={prevMonth} style={styles.monthNavBtn}>
+          <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+        {/* Tap month name to open quick-jump */}
+        <TouchableOpacity onPress={() => setShowJumper(v => !v)} style={styles.monthNavTitleBtn}>
+          <Text style={styles.monthNavTitle}>{monthName}</Text>
+          <Ionicons name={showJumper ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.primary} style={{ marginLeft: 4, marginTop: 2 }} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={nextMonth} style={styles.monthNavBtn}>
+          <Ionicons name="chevron-forward" size={24} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Quick jump panel */}
+      {showJumper && (
+        <ScrollView style={styles.jumperPanel} showsVerticalScrollIndicator={false}>
+          {jumpYears.map(y => (
+            <View key={y}>
+              <Text style={styles.jumperYear}>{y}</Text>
+              <View style={styles.jumperMonthRow}>
+                {MONTH_NAMES.map((name, mi) => {
+                  const isActive = y === year && mi === month;
+                  const isPast = new Date(y, mi + 1, 0) < new Date();
+                  return (
+                    <TouchableOpacity
+                      key={mi}
+                      style={[styles.jumperMonthBtn, isActive && styles.jumperMonthBtnActive, isPast && styles.jumperMonthBtnPast]}
+                      onPress={() => jumpTo(y, mi)}
+                    >
+                      <Text style={[styles.jumperMonthText, isActive && styles.jumperMonthTextActive, isPast && styles.jumperMonthTextPast]}>
+                        {name.slice(0, 3)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity style={styles.jumperTodayBtn} onPress={() => { setCurrentMonth(new Date()); setShowJumper(false); }}>
+            <Text style={styles.jumperTodayText}>↩ Back to Today</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
+
+      {/* Day labels */}
+      <View style={styles.monthDayLabels}>
+        {DAY_LABELS.map(d => (
+          <Text key={d} style={styles.monthDayLabel}>{d}</Text>
+        ))}
+      </View>
+
+      {/* Grid */}
+      <View style={styles.monthGrid}>
+        {cells.map((day, i) => {
+          if (!day) return <View key={`empty-${i}`} style={styles.monthCell} />;
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const dayEvents = events.filter(ev => toISODate(ev.date) === dateStr);
+          const isToday = dateStr === todayStr;
+          const isPast = new Date(dateStr) < new Date(todayStr);
+
+          return (
+            <TouchableOpacity
+              key={dateStr}
+              style={[styles.monthCell, isToday && styles.monthCellToday, isPast && styles.monthCellPast]}
+              onPress={() => onDayPress && onDayPress(dateStr)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.monthCellDay, isToday && styles.monthCellDayToday, isPast && styles.monthCellDayPast]}>
+                {day}
+              </Text>
+              <View style={styles.monthDots}>
+                {dayEvents.slice(0, 3).map((ev, j) => (
+                  <View key={j} style={[styles.monthDot, { backgroundColor: ev.color || COLORS.primary }]} />
+                ))}
+                {dayEvents.length > 3 && <Text style={styles.monthMoreText}>+{dayEvents.length - 3}</Text>}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 // ─── Main CalendarScreen ─────────────────────────────────────────────────────
 
 export default function CalendarScreen() {
   const [events, setEvents] = useState(
-    MOCK_EVENTS.map(ev => ({ ...ev, date: dateLabel(ev.date) }))
+    MOCK_EVENTS.map(ev => ({ ...ev, date: toISODate(ev.date) }))
   );
-  const [viewMode, setViewMode] = useState('agenda'); // 'agenda' | 'week'
+  const [viewMode, setViewMode] = useState('agenda'); // 'agenda' | 'week' | 'month'
   const [expandedId, setExpandedId] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
   const [addInitialData, setAddInitialData] = useState({});
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
 
   const toggleEvent = (ev) => {
     setExpandedId(prev => (prev === ev.id ? null : ev.id));
   };
 
   const handleAddEvent = (eventData) => {
-    setEvents(prev => [...prev, eventData]);
-    Alert.alert('Event Added', `"${eventData.title}" has been added to your calendar.`);
+    if (editingEvent) {
+      setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { ...ev, ...eventData, id: ev.id } : ev));
+      setEditingEvent(null);
+      Alert.alert('Updated', `"${eventData.title}" has been updated.`);
+    } else {
+      setEvents(prev => [...prev, eventData]);
+      Alert.alert('Event Added', `"${eventData.title}" has been added to your calendar.`);
+    }
   };
 
   const handleVoiceParsed = (parsed) => {
     setAddInitialData({
       title: parsed.title || '',
-      date: parsed.date || '',
+      date: parsed.date ? toISODate(parsed.date) : '',
       time: parsed.time || '',
       location: parsed.location || '',
     });
@@ -786,15 +1205,15 @@ export default function CalendarScreen() {
             {/* View toggle */}
             <TouchableOpacity
               style={styles.viewToggleBtn}
-              onPress={() => setViewMode(m => m === 'agenda' ? 'week' : 'agenda')}
+              onPress={() => setViewMode(m => m === 'agenda' ? 'week' : m === 'week' ? 'month' : 'agenda')}
             >
               <Ionicons
-                name={viewMode === 'agenda' ? 'calendar-outline' : 'list-outline'}
+                name={viewMode === 'agenda' ? 'calendar-outline' : viewMode === 'week' ? 'grid-outline' : 'list-outline'}
                 size={20}
                 color="#fff"
               />
               <Text style={styles.viewToggleBtnText}>
-                {viewMode === 'agenda' ? 'Week' : 'Agenda'}
+                {viewMode === 'agenda' ? 'Week' : viewMode === 'week' ? 'Month' : 'Agenda'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -820,6 +1239,39 @@ export default function CalendarScreen() {
       {/* Content */}
       {viewMode === 'week' ? (
         <WeekGrid events={events} />
+      ) : viewMode === 'month' ? (
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <MonthView
+            events={events}
+            onDayPress={(dateStr) => setSelectedDay(prev => prev === dateStr ? null : dateStr)}
+          />
+          {selectedDay && (() => {
+            const dayEvs = events.filter(ev => toISODate(ev.date) === selectedDay);
+            return (
+              <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+                <Text style={styles.agendaDateLabel}>{formatGroupLabel(selectedDay)}</Text>
+                {dayEvs.length === 0 ? (
+                  <Text style={{ color: COLORS.textMuted, fontSize: 15, paddingLeft: 4, marginBottom: 8 }}>No events this day</Text>
+                ) : (
+                  dayEvs.map(ev => (
+                    <EventCard
+                      key={ev.id}
+                      event={ev}
+                      onPress={toggleEvent}
+                      isExpanded={expandedId === ev.id}
+                      onEdit={(ev) => {
+                        setEditingEvent(ev);
+                        setAddInitialData(ev);
+                        setShowAddModal(true);
+                      }}
+                    />
+                  ))
+                )}
+              </View>
+            );
+          })()}
+          <View style={{ height: 100 }} />
+        </ScrollView>
       ) : (
         <ScrollView
           style={styles.agendaScroll}
@@ -835,6 +1287,11 @@ export default function CalendarScreen() {
                   event={ev}
                   onPress={toggleEvent}
                   isExpanded={expandedId === ev.id}
+                  onEdit={(ev) => {
+                    setEditingEvent(ev);
+                    setAddInitialData(ev);
+                    setShowAddModal(true);
+                  }}
                 />
               ))}
             </View>
@@ -860,7 +1317,7 @@ export default function CalendarScreen() {
       {/* Modals */}
       <AddEventModal
         visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => { setShowAddModal(false); setEditingEvent(null); }}
         onSave={handleAddEvent}
         initialData={addInitialData}
       />
@@ -1467,5 +1924,203 @@ const styles = StyleSheet.create({
   emptyStateSub: {
     fontSize: 16,
     color: COLORS.textMuted,
+  },
+
+  // Auto-detect badge (Fix 3)
+  autoDetectBadge: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: COLORS.primary + '33',
+  },
+  autoDetectText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+
+  // Month view (Fix 4)
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  monthNavBtn: { padding: 8 },
+  monthNavTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary },
+  monthDayLabels: {
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    backgroundColor: COLORS.surface,
+  },
+  monthDayLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 8,
+    backgroundColor: COLORS.surface,
+  },
+  monthCell: {
+    width: '14.28%',
+    aspectRatio: 0.85,
+    padding: 3,
+    alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: COLORS.divider,
+  },
+  monthCellToday: { backgroundColor: COLORS.primaryLight },
+  monthCellPast: { opacity: 0.45 },
+  monthCellDay: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  monthCellDayToday: { color: COLORS.primary },
+  monthCellDayPast: { color: COLORS.textMuted },
+  monthDots: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+    marginTop: 2,
+    justifyContent: 'center',
+  },
+  monthDot: { width: 6, height: 6, borderRadius: 3 },
+  monthMoreText: { fontSize: 9, color: COLORS.textMuted, fontWeight: '700' },
+
+  // Parsed preview (Fix 5)
+  parsedPreview: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + '44',
+    alignSelf: 'stretch',
+  },
+  parsedTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.primary,
+    marginBottom: 12,
+  },
+  parsedItem: {
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    marginBottom: 6,
+    lineHeight: 22,
+  },
+  parsedActions: {
+    gap: 10,
+    marginTop: 16,
+  },
+  parsedConfirm: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  parsedConfirmText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  parsedEdit: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    minHeight: 50,
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  parsedEditText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+
+  // Month jump panel
+  monthNavTitleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  jumperPanel: {
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    maxHeight: 280,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  jumperYear: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  jumperMonthRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  jumperMonthBtn: {
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.background,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    minWidth: 52,
+    alignItems: 'center',
+  },
+  jumperMonthBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  jumperMonthBtnPast: {
+    opacity: 0.45,
+  },
+  jumperMonthText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  jumperMonthTextActive: {
+    color: '#fff',
+  },
+  jumperMonthTextPast: {
+    color: COLORS.textMuted,
+  },
+  jumperTodayBtn: {
+    marginTop: 12,
+    marginBottom: 4,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+  },
+  jumperTodayText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.primary,
   },
 });
