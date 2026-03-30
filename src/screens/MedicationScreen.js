@@ -103,10 +103,17 @@ export default function MedicationScreen({ navigation }) {
     ]);
   };
 
+  // Total dose events today (each med × each frequency slot it appears in)
+  const allDoseEvents = medications.flatMap(m =>
+    m.frequency.map(s => ({ med: m, slot: s, taken: !!m.taken?.[s] }))
+  );
+  const totalDoseEvents = allDoseEvents.length;
+  const takenDoseEvents = allDoseEvents.filter(d => d.taken).length;
+
   return (
     <SafeAreaView style={styles.safe}>
 
-      {/* Fixed top section: Today's Medications */}
+      {/* Header */}
       <LinearGradient
         colors={['#0E4D7A', '#1A6FA3']}
         style={styles.topSection}
@@ -116,51 +123,100 @@ export default function MedicationScreen({ navigation }) {
         <View style={styles.topHeaderRow}>
           <Text style={styles.topTitle}>Today's Medications</Text>
           <View style={styles.slotChip}>
-            <Text style={styles.slotChipText}>{FREQ_ICONS[slot]} {SLOT_LABELS[slot]}</Text>
+            <Text style={styles.slotChipText}>
+              {FREQ_ICONS[slot]} {SLOT_LABELS[slot]} now
+            </Text>
           </View>
         </View>
         <Text style={styles.topProgress}>
-          {currentTaken} of {currentMeds.length} taken
+          {takenDoseEvents} of {totalDoseEvents} doses taken today
         </Text>
-        {currentMeds.length > 0 && (
+        {totalDoseEvents > 0 && (
           <View style={styles.topProgressTrack}>
             <View style={[styles.topProgressFill, {
-              width: `${currentMeds.length > 0 ? (currentTaken / currentMeds.length) * 100 : 0}%`
+              width: `${(takenDoseEvents / totalDoseEvents) * 100}%`
             }]} />
           </View>
         )}
       </LinearGradient>
 
-      {/* Active med cards for current slot */}
-      {currentMeds.length > 0 ? (
-        <View style={styles.currentMedsWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.currentMedsScroll}
-          >
-            {currentMeds.map(med => (
-              <ActiveMedCard
-                key={med.id}
-                med={med}
-                slot={slot}
-                onToggle={() => markMedicationTaken(med.id, slot)}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      ) : (
-        <View style={styles.noCurrentMeds}>
-          <Text style={styles.noCurrentMedsText}>✅ No medications scheduled right now</Text>
-        </View>
-      )}
-
-      {/* Scrollable manage section */}
+      {/* Full scrollable body */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+
+        {/* ── Grouped time-of-day sections ── */}
+        {FREQUENCIES.map(s => {
+          const slotMeds = medications.filter(m => m.frequency.includes(s));
+          if (slotMeds.length === 0) return null;
+          const slotTaken = slotMeds.filter(m => m.taken?.[s]).length;
+          const isCurrent = s === slot;
+
+          return (
+            <View key={s} style={[styles.timeGroup, isCurrent && styles.timeGroupCurrent]}>
+              <View style={styles.timeGroupHeader}>
+                <Text style={styles.timeGroupIcon}>{FREQ_ICONS[s]}</Text>
+                <Text style={styles.timeGroupLabel}>{SLOT_LABELS[s]} Medications</Text>
+                {isCurrent && <View style={styles.nowBadge}><Text style={styles.nowBadgeText}>NOW</Text></View>}
+                <Text style={styles.timeGroupCount}>{slotTaken}/{slotMeds.length}</Text>
+              </View>
+
+              {slotMeds.map(med => {
+                const taken = !!med.taken?.[s];
+                return (
+                  <TouchableOpacity
+                    key={`${med.id}-${s}`}
+                    style={[styles.medCard, taken && styles.medCardDone, !isCurrent && styles.medCardDimmed]}
+                    onPress={() => isCurrent && markMedicationTaken(med.id, s)}
+                    activeOpacity={isCurrent ? 0.8 : 1}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: taken }}
+                  >
+                    {/* Checkbox */}
+                    <TouchableOpacity
+                      style={[styles.checkbox, taken ? styles.checkboxDone : styles.checkboxPending]}
+                      onPress={() => isCurrent && markMedicationTaken(med.id, s)}
+                      disabled={!isCurrent}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      {taken
+                        ? <Text style={styles.checkmarkDone}>✓</Text>
+                        : isCurrent
+                          ? <Text style={styles.checkmarkPending}>tap</Text>
+                          : null
+                      }
+                    </TouchableOpacity>
+
+                    <View style={styles.medInfo}>
+                      <Text style={[styles.medName, taken && styles.medNameDone]}>{med.name}</Text>
+                      <Text style={styles.medDose}>{dosageLabel(med)}</Text>
+                    </View>
+
+                    {taken ? (
+                      <View style={styles.takenPill}><Text style={styles.takenPillText}>Taken ✓</Text></View>
+                    ) : isCurrent ? (
+                      <View style={styles.pendingPill}><Text style={styles.pendingPillText}>Confirm</Text></View>
+                    ) : (
+                      <View style={styles.upcomingPill}><Text style={styles.upcomingPillText}>Upcoming</Text></View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          );
+        })}
+
+        {medications.length === 0 && (
+          <View style={styles.emptyMeds}>
+            <Text style={styles.emptyIcon}>💊</Text>
+            <Text style={styles.emptyText}>No medications added yet</Text>
+            <Text style={styles.emptySubtext}>Use the scanner or form below to add your medications</Text>
+          </View>
+        )}
+
+        {/* ── Manage section ── */}
         <Text style={styles.manageSectionTitle}>Manage Medications</Text>
 
         {/* Scan section */}
@@ -609,4 +665,114 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 52, marginBottom: 10 },
   emptyText: { fontSize: 22, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 8 },
   emptySubtext: { fontSize: 17, color: COLORS.textMuted, textAlign: 'center', lineHeight: 24 },
+
+  // ── Time-grouped sections ──
+  timeGroup: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  timeGroupCurrent: {
+    // current slot gets subtle highlight
+  },
+  timeGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    paddingBottom: 6,
+    borderBottomWidth: 1.5,
+    borderBottomColor: COLORS.divider,
+  },
+  timeGroupIcon: { fontSize: 20 },
+  timeGroupLabel: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+  },
+  nowBadge: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+  },
+  nowBadgeText: { fontSize: 11, fontWeight: '800', color: '#fff', letterSpacing: 0.5 },
+  timeGroupCount: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+
+  // Med card in grouped view
+  medCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 14,
+    padding: 14,
+    marginVertical: 4,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+    gap: 12,
+    minHeight: 72,
+  },
+  medCardDone: {
+    borderColor: COLORS.successBorder,
+    backgroundColor: COLORS.successBg,
+  },
+  medCardDimmed: { opacity: 0.55 },
+
+  checkbox: {
+    width: 44, height: 44, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2.5,
+  },
+  checkboxPending: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
+    borderStyle: 'dashed',
+  },
+  checkboxDone: {
+    backgroundColor: COLORS.success,
+    borderColor: COLORS.success,
+    borderStyle: 'solid',
+  },
+  checkmarkDone: { fontSize: 22, color: '#fff', fontWeight: '800' },
+  checkmarkPending: { fontSize: 11, color: COLORS.primary, fontWeight: '800' },
+
+  medInfo: { flex: 1 },
+  medName: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  medNameDone: { textDecorationLine: 'line-through', color: COLORS.textMuted },
+  medDose: { fontSize: 14, color: COLORS.textSecondary, marginTop: 2, fontWeight: '500' },
+
+  takenPill: {
+    backgroundColor: COLORS.successBg, borderRadius: 100,
+    paddingVertical: 5, paddingHorizontal: 12,
+    borderWidth: 1.5, borderColor: COLORS.successBorder,
+  },
+  takenPillText: { fontSize: 12, fontWeight: '700', color: COLORS.success },
+  pendingPill: {
+    backgroundColor: COLORS.primary, borderRadius: 100,
+    paddingVertical: 5, paddingHorizontal: 12,
+  },
+  pendingPillText: { fontSize: 12, fontWeight: '800', color: '#fff' },
+  upcomingPill: {
+    backgroundColor: COLORS.background, borderRadius: 100,
+    paddingVertical: 5, paddingHorizontal: 12,
+    borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  upcomingPillText: { fontSize: 12, fontWeight: '600', color: COLORS.textMuted },
+
+  emptyMeds: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 18, padding: 36, alignItems: 'center',
+    borderWidth: 1.5, borderColor: COLORS.border,
+    borderStyle: 'dashed', margin: 16,
+  },
 });

@@ -65,10 +65,12 @@ export default function SeniorHomeScreen({ navigation }) {
     setTimeout(() => setCheckinDone(false), 4000);
   };
 
-  const totalDoses = medications.flatMap(m => m.frequency.map(s => s)).length;
-  const takenDoses = medications.flatMap(m =>
-    m.frequency.map(s => !!m.taken?.[s])
-  ).filter(Boolean).length;
+  // Total dose events = each med × each time slot it appears in (e.g. Amoxicillin morning + evening = 2)
+  const allDoseEvents = medications.flatMap(m =>
+    m.frequency.map(s => ({ taken: !!m.taken?.[s] }))
+  );
+  const totalDoses = allDoseEvents.length;
+  const takenDoses = allDoseEvents.filter(d => d.taken).length;
 
   const stepsPct = Math.min((MOCK_STEPS / STEP_GOAL) * 100, 100);
   const firstName = MOCK_SENIOR_NAME.split(' ')[0];
@@ -202,7 +204,7 @@ export default function SeniorHomeScreen({ navigation }) {
             >
               <Text style={styles.statIcon}>💊</Text>
               <Text style={styles.statValue}>{takenDoses}/{totalDoses}</Text>
-              <Text style={styles.statLabel}>Meds today</Text>
+              <Text style={styles.statLabel}>Doses today</Text>
               <Text style={styles.statArrow}>›</Text>
             </TouchableOpacity>
 
