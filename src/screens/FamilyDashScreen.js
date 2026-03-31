@@ -42,7 +42,7 @@ const STATUS = {
 };
 
 export default function FamilyDashScreen({ navigation }) {
-  const { settings, updateSettings } = useApp();
+  const { settings, updateSettings, setProfilePhoto, getProfilePhoto, sendMedReminder } = useApp();
   const [selectedId, setSelectedId] = useState(MOCK_PEOPLE[0].id);
   const [notif, setNotif] = useState(settings.notifications.missedMeds);
   const [selectedMed, setSelectedMed] = useState(null);

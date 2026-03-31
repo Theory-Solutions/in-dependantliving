@@ -8,8 +8,8 @@
  * via any medium, is strictly prohibited.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Linking, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,19 +57,7 @@ export default function SeniorHomeScreen({ navigation }) {
   const { medications, settings, doCheckin } = useApp();
   const [now, setNow] = useState(new Date());
   const [checkinDone, setCheckinDone] = useState(false);
-  const sosPulse = useRef(new Animated.Value(1)).current;
-
-  // Pulse the SOS button
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(sosPulse, { toValue: 1.05, duration: 900, useNativeDriver: true }),
-        Animated.timing(sosPulse, { toValue: 1,    duration: 900, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [sosPulse]);
+  // SOS button is now in the header — no animation needed
 
   const handleCall = (contact) => {
     Alert.alert(
@@ -131,15 +119,26 @@ export default function SeniorHomeScreen({ navigation }) {
               <Text style={styles.greeting}>{getGreeting(firstName)}</Text>
               <Text style={styles.headerDate}>{formatDate(now)}</Text>
             </View>
-            {/* Settings sprocket — top right */}
-            <TouchableOpacity
-              style={styles.settingsBtn}
-              onPress={() => goToTab('Settings')}
-              accessibilityLabel="Settings"
-              accessibilityRole="button"
-            >
-              <Ionicons name="settings-outline" size={24} color="rgba(255,255,255,0.9)" />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              {/* SOS — top right, next to settings */}
+              <TouchableOpacity
+                style={styles.sosHeaderBtn}
+                onPress={() => navigation.navigate('SOS')}
+                accessibilityLabel="Emergency SOS"
+                accessibilityRole="button"
+              >
+                <Text style={styles.sosHeaderText}>SOS</Text>
+              </TouchableOpacity>
+              {/* Settings sprocket */}
+              <TouchableOpacity
+                style={styles.settingsBtn}
+                onPress={() => goToTab('Settings')}
+                accessibilityLabel="Settings"
+                accessibilityRole="button"
+              >
+                <Ionicons name="settings-outline" size={24} color="rgba(255,255,255,0.9)" />
+              </TouchableOpacity>
+            </View>
           </View>
         </LinearGradient>
 
@@ -319,18 +318,7 @@ export default function SeniorHomeScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Floating SOS button */}
-      <Animated.View style={[styles.sosFloat, { transform: [{ scale: sosPulse }] }]}>
-        <TouchableOpacity
-          style={styles.sosFloatInner}
-          onPress={() => navigation.navigate('SOS')}
-          activeOpacity={0.85}
-          accessibilityLabel="Emergency SOS"
-          accessibilityRole="button"
-        >
-          <Text style={styles.sosFloatText}>SOS</Text>
-        </TouchableOpacity>
-      </Animated.View>
+      {/* SOS button moved to header — no floating button */}
 
       </View>
     </SafeAreaView>
@@ -347,13 +335,43 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 26, fontWeight: '800', color: '#fff', lineHeight: 32 },
   headerDate: { fontSize: 15, color: 'rgba(255,255,255,0.72)', marginTop: 4, fontWeight: '500' },
 
+  // Header right buttons
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 2,
+  },
+
+  // SOS button in header
+  sosHeaderBtn: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FCA5A5',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  sosHeaderText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: 1.5,
+  },
+
   // Settings sprocket
   settingsBtn: {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
-    marginTop: 2,
   },
 
   body: { padding: 18 },
@@ -451,20 +469,7 @@ const styles = StyleSheet.create({
   },
   addContactText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600', marginTop: 6 },
 
-  // SOS floating button
-  sosFloat: {
-    position: 'absolute', bottom: 24, right: 20,
-    width: 64, height: 64, borderRadius: 32,
-    shadowColor: '#DC2626', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
-    zIndex: 100,
-  },
-  sosFloatInner: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: '#DC2626', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#FCA5A5',
-  },
-  sosFloatText: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: 1 },
+  // SOS float styles removed — button is now in header
 
   // I'm OK — small, bottom
   checkinBtn: {

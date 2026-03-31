@@ -406,32 +406,69 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
     }, 320);
   };
 
-  const handleRotateDone = () => {
-    // Show "Processing..." spinner for 1 second (feels like real OCR)
+  const handleRotateDone = async () => {
     setProcessingRotate(true);
-    setTimeout(() => {
+    try {
+      // Take a photo from the camera
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({
+          base64: true,
+          quality: 0.7,
+          skipProcessing: true,
+        });
+        if (photo?.base64) {
+          const result = await runVisionOCR(photo.base64, 'rotate');
+          setProcessingRotate(false);
+          setScannedData(result);
+          setStep('review');
+          return;
+        }
+      }
+      // Fallback if camera capture fails
       setProcessingRotate(false);
-      const mockOCR = {
-        name: 'Lisinopril',
-        dosage: '10mg',
-        quantity: 1,
-        purpose: 'High blood pressure',
-        directions: 'Take 1 tablet by mouth once daily. Do not stop taking without consulting your doctor.',
-        pillsRemaining: 30,
-        pillsTotal: 30,
-        daysSupply: 30,
-        refillsRemaining: 5,
-        frequency: ['morning'],
-        _source: 'rotate',
-      };
-      setScannedData(mockOCR);
+      setScannedData({
+        name: '', dosage: '', quantity: 1, purpose: '', directions: '',
+        pillsRemaining: 0, pillsTotal: 0, daysSupply: 30, refillsRemaining: 0,
+        frequency: [], _source: 'rotate',
+        _lookupError: 'Could not capture image. Please try again or enter details manually.',
+      });
       setStep('review');
-    }, 1000);
+    } catch (e) {
+      setProcessingRotate(false);
+      setScannedData({
+        name: '', dosage: '', quantity: 1, purpose: '', directions: '',
+        pillsRemaining: 0, pillsTotal: 0, daysSupply: 30, refillsRemaining: 0,
+        frequency: [], _source: 'rotate',
+        _lookupError: e.message || 'OCR failed. Please enter details manually.',
+      });
+      setStep('review');
+    }
   };
 
-  // ── Simulate single-frame label scan (mock OCR) ──────────────────────────
-  const handleLabelCapture = () => {
+  // ── Single-frame label capture with real OCR ─────────────────────────────
+  const handleLabelCapture = async () => {
     Vibration.vibrate(80);
+    // For single frame: capture immediately and run OCR
+    if (cameraRef.current) {
+      try {
+        setBarcodeSearching(true); // reuse loading state
+        const photo = await cameraRef.current.takePictureAsync({
+          base64: true,
+          quality: 0.7,
+        });
+        if (photo?.base64) {
+          const result = await runVisionOCR(photo.base64, 'label');
+          setBarcodeSearching(false);
+          setScannedData(result);
+          setStep('review');
+          return;
+        }
+      } catch (e) {
+        // Fall through to rotation mode
+      }
+      setBarcodeSearching(false);
+    }
+    // Fallback: go to rotation mode for better capture
     setStep('rotate');
   };
 
@@ -662,6 +699,140 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
 }
 
 // ── Barcode data parser ────────────────────────────────────────────────────────
+// ── Google Cloud Vision OCR for prescription labels ─────────────────────────
+const VISION_API_KEY = 'AIzaSyA1s9yCPtn2MCDStDEJItb4pwC5ReWFrcg';
+
+async function runVisionOCR(base64Image, source) {
+  const url = `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`;
+
+  const body = JSON.stringify({
+    requests: [{
+      image: { content: base64Image },
+      features: [{ type: 'TEXT_DETECTION', maxResults: 10 }],
+    }],
+  });
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  });
+
+  if (!resp.ok) {
+    throw new Error(`Vision API error: ${resp.status}`);
+  }
+
+  const json = await resp.json();
+  const fullText = json.responses?.[0]?.fullTextAnnotation?.text || '';
+
+  if (!fullText.trim()) {
+    throw new Error('No text found on the label. Try holding the bottle closer or in better lighting.');
+  }
+
+  // Parse the OCR text into medication fields
+  const parsed = parsePrescriptionText(fullText);
+  parsed._source = source;
+  parsed._ocrRawText = fullText;
+  return parsed;
+}
+
+// ── Parse raw OCR text from a prescription label ────────────────────────────
+function parsePrescriptionText(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const fullLower = text.toLowerCase();
+
+  let name = '';
+  let dosage = '';
+  let quantity = 1;
+  let purpose = '';
+  let directions = '';
+  let refills = 0;
+
+  // Common patterns on prescription labels:
+  // Drug name is usually the largest/boldest text — often near the top
+  // Look for patterns like "LISINOPRIL 10MG" or "Metformin HCl 500mg"
+
+  // Extract drug name + dosage (look for word followed by mg/mcg/ml pattern)
+  const drugPattern = /([A-Za-z][A-Za-z\s\-]+?)\s*(\d+\.?\d*\s*(?:mg|mcg|ml|g|units|%|MG|MCG|ML))/i;
+  const drugMatch = text.match(drugPattern);
+  if (drugMatch) {
+    name = drugMatch[1].trim().replace(/\b(tablets?|capsules?|oral|solution)\b/gi, '').trim();
+    dosage = drugMatch[2].trim();
+  }
+
+  // Extract directions — look for "take", "use", "apply" lines
+  const dirPatterns = [
+    /(?:take|use|apply|inject|inhale|instill)[^\n\.]*(?:\.|$)/gi,
+    /(?:by mouth|orally|topically|twice daily|once daily|every \d+ hours?|with food|at bedtime)[^\n]*(?:\.|$)/gi,
+  ];
+  for (const pat of dirPatterns) {
+    const matches = text.match(pat);
+    if (matches) {
+      directions = matches.join(' ').trim();
+      break;
+    }
+  }
+
+  // If no directions found, look for the longest line that seems like instructions
+  if (!directions) {
+    const instructionLine = lines.find(l =>
+      /take|use|apply|tablet|capsule|daily|hour|food|mouth|dose/i.test(l) && l.length > 20
+    );
+    if (instructionLine) directions = instructionLine;
+  }
+
+  // Extract quantity — "take 2 tablets" or "qty: 30"
+  const qtyMatch = text.match(/(?:take|qty|quantity)[:\s]*(\d+)/i);
+  if (qtyMatch) {
+    const n = parseInt(qtyMatch[1]);
+    if (n <= 10) quantity = n; // per-dose quantity
+  }
+
+  // Extract refills
+  const refillMatch = text.match(/(?:refills?|ref)[:\s]*(\d+)/i);
+  if (refillMatch) refills = parseInt(refillMatch[1]);
+
+  // Try to identify purpose from common keywords
+  const purposeMap = [
+    { keywords: ['blood pressure', 'hypertension', 'htn'], purpose: 'High blood pressure' },
+    { keywords: ['diabetes', 'blood sugar', 'glucose', 'metformin'], purpose: 'Type 2 diabetes' },
+    { keywords: ['cholesterol', 'lipid', 'statin', 'atorvastatin'], purpose: 'High cholesterol' },
+    { keywords: ['infection', 'antibiotic', 'amoxicillin', 'ciprofloxacin'], purpose: 'Bacterial infection' },
+    { keywords: ['pain', 'analgesic', 'ibuprofen', 'acetaminophen'], purpose: 'Pain relief' },
+    { keywords: ['acid reflux', 'heartburn', 'omeprazole', 'pantoprazole', 'gerd'], purpose: 'Acid reflux' },
+    { keywords: ['thyroid', 'levothyroxine'], purpose: 'Thyroid condition' },
+    { keywords: ['depression', 'anxiety', 'ssri', 'sertraline', 'fluoxetine'], purpose: 'Mental health' },
+    { keywords: ['blood thin', 'warfarin', 'coumadin', 'anticoagulant'], purpose: 'Blood thinner' },
+    { keywords: ['heart', 'cardiac', 'metoprolol', 'lisinopril', 'amlodipine'], purpose: 'Heart / blood pressure' },
+    { keywords: ['asthma', 'inhaler', 'albuterol', 'bronchodilator'], purpose: 'Asthma / breathing' },
+  ];
+
+  for (const { keywords, purpose: p } of purposeMap) {
+    if (keywords.some(kw => fullLower.includes(kw))) {
+      purpose = p;
+      break;
+    }
+  }
+
+  // If no name found from pattern, take the first substantial line
+  if (!name && lines.length > 0) {
+    name = lines.find(l => l.length > 3 && l.length < 40 && !/^\d+$/.test(l) && !/pharmacy|rx|date|doctor|dr\./i.test(l)) || '';
+  }
+
+  return {
+    name: name || '',
+    dosage: dosage || '',
+    quantity,
+    purpose,
+    directions: directions || '',
+    pillsRemaining: 0,
+    pillsTotal: 0,
+    daysSupply: 30,
+    refillsRemaining: refills,
+    frequency: [],
+  };
+}
+
 // ── Real NDC drug database lookup via openFDA ──────────────────────────────
 // Barcode formats on prescription bottles:
 // - UPC-A (12 digits) or EAN-13 (13 digits) — contains NDC embedded
