@@ -4,11 +4,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
+import { useNavigation } from '@react-navigation/native';
 
 const { height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   const { setRole } = useApp();
+  // useNavigation is safe here — screen is always inside a NavigationContainer
+  let navigation;
+  try {
+    navigation = useNavigation();
+  } catch (_) {
+    navigation = null;
+  }
 
   return (
     <View style={styles.root}>
@@ -85,6 +93,21 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
 
           <Text style={styles.privacyNote}>🔒  Your data stays on your device — always</Text>
+
+          {/* Sign in link for users who already have an account */}
+          {navigation ? (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Auth')}
+              style={styles.signInLinkWrap}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signInLinkText}>
+                Already have an account?{' '}
+                <Text style={styles.signInLinkHighlight}>Sign In</Text>
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
           <Text style={styles.copyright}>© 2026 Theory Solutions LLC</Text>
         </View>
       </SafeAreaView>
@@ -252,6 +275,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 20,
     marginBottom: 6,
+  },
+  signInLinkWrap: {
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  signInLinkText: {
+    fontSize: 15,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+  },
+  signInLinkHighlight: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
   copyright: {
     textAlign: 'center',

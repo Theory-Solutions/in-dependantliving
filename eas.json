@@ -31,7 +31,8 @@
     "production": {
       "ios": {
         "appleId": "justin.dallaire@theory-solutions.com",
-        "appleTeamId": "ADS88L94Q4"
+        "appleTeamId": "ADS88L94Q4",
+        "ascAppId": "6761432570"
       }
     }
   }

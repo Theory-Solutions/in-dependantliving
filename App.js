@@ -20,6 +20,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { COLORS } from './src/constants/colors';
 
+// Screens
+import AuthScreen from './src/screens/AuthScreen';
+import PairingScreen from './src/screens/PairingScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import SeniorHomeScreen from './src/screens/SeniorHomeScreen';
 import MedicationScreen from './src/screens/MedicationScreen';
@@ -61,6 +64,8 @@ const TAB_LABEL_STYLE = {
   letterSpacing: 0.2,
   marginTop: 2,
 };
+
+// ── Stack navigators ───────────────────────────────────────────────────────
 
 // Wraps the Home tab in a stack so WeatherScreen, SOS, etc. can be pushed from it
 function HomeStack() {
@@ -173,18 +178,18 @@ function FamilyTabs() {
   );
 }
 
+// ── Main app tabs (used as a screen in auth stack) ─────────────────────────
+function AppTabs() {
+  const { role } = useApp();
+  return role === 'senior' ? <SeniorTabs /> : <FamilyTabs />;
+}
+
+// ── Root Navigator ─────────────────────────────────────────────────────────
 function RootNavigator() {
-  const { role, setRole } = useApp();
-  const [loading, setLoading] = useState(true);
+  const { role, firebaseUser, isLoading, setRole } = useApp();
 
-  useEffect(() => {
-    AsyncStorage.getItem('userRole').then((storedRole) => {
-      if (storedRole) setRole(storedRole);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) {
+  // Show splash/loading while auth state resolves
+  if (isLoading) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -192,17 +197,24 @@ function RootNavigator() {
     );
   }
 
-  if (!role) {
+  // ── Authenticated users with a role set: go straight to app ──────────────
+  if (role) {
     return (
       <NavigationContainer>
-        <OnboardingScreen />
+        {role === 'senior' ? <SeniorTabs /> : <FamilyTabs />}
       </NavigationContainer>
     );
   }
 
+  // ── No user + no role: show Auth flow ─────────────────────────────────────
+  // Also covers guest onboarding (AuthScreen navigates to Onboarding)
   return (
     <NavigationContainer>
-      {role === 'senior' ? <SeniorTabs /> : <FamilyTabs />}
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="Pairing" component={PairingScreen} />
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

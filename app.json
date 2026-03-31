@@ -18,7 +18,10 @@
         "NSMicrophoneUsageDescription": "Microphone access is required by the camera system.",
         "NSPhotoLibraryUsageDescription": "In-dependent Living uses your photo library so caregivers can upload a profile photo for their loved one."
       },
-      "bundleIdentifier": "com.theorysolutions.independentliving"
+      "bundleIdentifier": "com.theorysolutions.independentliving",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "permissions": [
