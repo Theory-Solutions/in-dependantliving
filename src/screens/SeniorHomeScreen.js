@@ -8,14 +8,20 @@
  * via any medium, is strictly prohibited.
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 import { MOCK_SENIOR_NAME } from '../constants/mockData';
+
+const MOCK_CONTACTS = [
+  { id: '1', name: 'David',    relation: 'Son',      avatar: '👨',    phone: '+15205551234' },
+  { id: '2', name: 'Sarah',    relation: 'Daughter', avatar: '👩',    phone: '+15205555678' },
+  { id: '3', name: 'Dr. Smith',relation: 'Doctor',   avatar: '👨‍⚕️', phone: '+15205559012' },
+];
 
 const MOCK_STEPS = 3241;
 const STEP_GOAL = 10000;
@@ -51,6 +57,35 @@ export default function SeniorHomeScreen({ navigation }) {
   const { medications, settings, doCheckin } = useApp();
   const [now, setNow] = useState(new Date());
   const [checkinDone, setCheckinDone] = useState(false);
+  const sosPulse = useRef(new Animated.Value(1)).current;
+
+  // Pulse the SOS button
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(sosPulse, { toValue: 1.05, duration: 900, useNativeDriver: true }),
+        Animated.timing(sosPulse, { toValue: 1,    duration: 900, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [sosPulse]);
+
+  const handleCall = (contact) => {
+    Alert.alert(
+      `Call ${contact.name}?`,
+      `${contact.relation} — ${contact.phone}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: '📞 Voice Call', onPress: () => Linking.openURL(`tel:${contact.phone}`) },
+        { text: '📹 Video Call', onPress: () => {
+          Linking.openURL(`facetime:${contact.phone}`).catch(() =>
+            Linking.openURL(`tel:${contact.phone}`)
+          );
+        }},
+      ]
+    );
+  };
 
   const showCheckin = settings?.showCheckin !== false; // default on, can disable in settings
 
@@ -82,7 +117,8 @@ export default function SeniorHomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
+      <View style={{ flex: 1 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 96 }}>
 
         {/* Gradient header */}
         <LinearGradient
@@ -192,6 +228,37 @@ export default function SeniorHomeScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
+          {/* ── CALL FAMILY ── */}
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardIcon}>📞</Text>
+              <Text style={styles.cardTitle}>Call Family</Text>
+            </View>
+            <Text style={styles.callSubtext}>One tap to connect with your loved ones</Text>
+            <View style={styles.callGrid}>
+              {MOCK_CONTACTS.map(contact => (
+                <TouchableOpacity
+                  key={contact.id}
+                  style={styles.callCard}
+                  onPress={() => handleCall(contact)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.callAvatar}>{contact.avatar}</Text>
+                  <Text style={styles.callName}>{contact.name}</Text>
+                  <Text style={styles.callRelation}>{contact.relation}</Text>
+                  <View style={styles.callBtn}>
+                    <Ionicons name="videocam" size={18} color="#fff" />
+                    <Text style={styles.callBtnText}>Video</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.addContactCard} activeOpacity={0.8}>
+                <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
+                <Text style={styles.addContactText}>Add Contact</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* ── QUICK STATS (all hot buttons) ── */}
           <Text style={styles.statsHeading}>Quick Stats</Text>
           <View style={styles.statsRow}>
@@ -251,6 +318,21 @@ export default function SeniorHomeScreen({ navigation }) {
 
         </View>
       </ScrollView>
+
+      {/* Floating SOS button */}
+      <Animated.View style={[styles.sosFloat, { transform: [{ scale: sosPulse }] }]}>
+        <TouchableOpacity
+          style={styles.sosFloatInner}
+          onPress={() => navigation.navigate('SOS')}
+          activeOpacity={0.85}
+          accessibilityLabel="Emergency SOS"
+          accessibilityRole="button"
+        >
+          <Text style={styles.sosFloatText}>SOS</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      </View>
     </SafeAreaView>
   );
 }
@@ -344,6 +426,45 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' },
   statLabel: { fontSize: 11, color: COLORS.textMuted, fontWeight: '600', marginTop: 2, textAlign: 'center' },
   statArrow: { fontSize: 18, color: COLORS.primary, fontWeight: '800', marginTop: 4 },
+
+  // Call Family
+  callSubtext: { fontSize: 14, color: COLORS.textMuted, marginBottom: 14 },
+  callGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  callCard: {
+    width: '30%', backgroundColor: COLORS.background, borderRadius: 14,
+    padding: 12, alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.border,
+  },
+  callAvatar: { fontSize: 36, marginBottom: 6 },
+  callName: { fontSize: 15, fontWeight: '800', color: COLORS.textPrimary },
+  callRelation: { fontSize: 12, color: COLORS.textMuted, marginBottom: 8 },
+  callBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: COLORS.primary, borderRadius: 100,
+    paddingVertical: 6, paddingHorizontal: 12,
+  },
+  callBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  addContactCard: {
+    width: '30%', backgroundColor: COLORS.background, borderRadius: 14,
+    padding: 12, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: COLORS.border, borderStyle: 'dashed',
+    minHeight: 120,
+  },
+  addContactText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600', marginTop: 6 },
+
+  // SOS floating button
+  sosFloat: {
+    position: 'absolute', bottom: 24, right: 20,
+    width: 64, height: 64, borderRadius: 32,
+    shadowColor: '#DC2626', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
+    zIndex: 100,
+  },
+  sosFloatInner: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: '#DC2626', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#FCA5A5',
+  },
+  sosFloatText: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: 1 },
 
   // I'm OK — small, bottom
   checkinBtn: {

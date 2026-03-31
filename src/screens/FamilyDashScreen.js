@@ -41,7 +41,7 @@ const STATUS = {
   alert:   { color: COLORS.alert,   bg: COLORS.alertBg,   border: COLORS.alertBorder,   emoji: '🚨', label: 'Needs Attention', gradient: ['#B91C1C', '#DC2626'] },
 };
 
-export default function FamilyDashScreen() {
+export default function FamilyDashScreen({ navigation }) {
   const { settings, updateSettings } = useApp();
   const [selectedId, setSelectedId] = useState(MOCK_PEOPLE[0].id);
   const [notif, setNotif] = useState(settings.notifications.missedMeds);
@@ -213,6 +213,20 @@ export default function FamilyDashScreen() {
               <StatItem icon="👟" value={person.stepCount.toLocaleString()} label="Steps" />
             </View>
           </View>
+
+          {/* Location card */}
+          <TouchableOpacity
+            style={styles.locationCard}
+            onPress={() => navigation?.navigate?.('Location')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.locationIcon}>📍</Text>
+            <View style={styles.locationInfo}>
+              <Text style={styles.locationTitle}>{person.name}'s Location</Text>
+              <Text style={styles.locationStatus}>🏠 Home — last updated 12 min ago</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
+          </TouchableOpacity>
 
           {/* Medication breakdown */}
           <View style={styles.section}>
@@ -509,6 +523,24 @@ const styles = StyleSheet.create({
   alertInfo: { flex: 1, marginRight: 16 },
   alertLabel: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   alertSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+
+  // Location card
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16, padding: 16, marginBottom: 18,
+    borderWidth: 1.5, borderColor: COLORS.border,
+    shadowColor: COLORS.shadowColor,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+    gap: 12,
+    minHeight: 64,
+  },
+  locationIcon: { fontSize: 28 },
+  locationInfo: { flex: 1 },
+  locationTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textPrimary },
+  locationStatus: { fontSize: 13, color: COLORS.textMuted, marginTop: 2, fontWeight: '500' },
 
   // Pairing
   pairingCard: {

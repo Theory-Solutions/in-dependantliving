@@ -29,6 +29,8 @@ import WeatherScreen from './src/screens/WeatherScreen';
 import ScannerScreen from './src/screens/ScannerScreen';
 import FamilyDashScreen from './src/screens/FamilyDashScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import SOSScreen from './src/screens/SOSScreen';
+import LocationScreen from './src/screens/LocationScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -54,13 +56,18 @@ const TAB_LABEL_STYLE = {
   marginTop: 2,
 };
 
-// Wraps the Home tab in a stack so WeatherScreen can be pushed from it
+// Wraps the Home tab in a stack so WeatherScreen, SOS, etc. can be pushed from it
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeMain" component={SeniorHomeScreen} />
       <Stack.Screen name="Weather" component={WeatherScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen
+        name="SOS"
+        component={SOSScreen}
+        options={{ presentation: 'fullScreenModal' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -127,6 +134,16 @@ function SeniorTabs() {
   );
 }
 
+// Wraps the Family Dashboard in a stack so LocationScreen can be pushed
+function FamilyDashStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="FamilyDashMain" component={FamilyDashScreen} />
+      <Stack.Screen name="Location" component={LocationScreen} />
+    </Stack.Navigator>
+  );
+}
+
 function FamilyTabs() {
   return (
     <Tab.Navigator
@@ -144,7 +161,7 @@ function FamilyTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={FamilyDashScreen} options={{ title: 'Dashboard' }} />
+      <Tab.Screen name="Dashboard" component={FamilyDashStack} options={{ title: 'Dashboard' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

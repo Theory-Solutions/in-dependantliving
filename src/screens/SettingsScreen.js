@@ -26,6 +26,7 @@ export default function SettingsScreen() {
   const [threshold, setThreshold] = useState(settings.alertThreshold);
   const [notifs, setNotifs] = useState({ ...settings.notifications });
   const [showCheckin, setShowCheckin] = useState(settings.showCheckin !== false);
+  const [locationSharing, setLocationSharing] = useState(settings.locationSharing !== false);
 
   const handleThreshold = (val) => {
     setThreshold(val);
@@ -79,6 +80,32 @@ export default function SettingsScreen() {
                 onValueChange={(v) => {
                   setShowCheckin(v);
                   updateSettings({ showCheckin: v });
+                }}
+                trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                thumbColor="#fff"
+                style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Location Sharing */}
+        {role === 'senior' && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>📍 Location Sharing</Text>
+            <Text style={styles.cardSub}>
+              Share your general location with family. They'll see if you're home, out, or at an appointment — not your exact GPS coordinates.
+            </Text>
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleInfo}>
+                <Text style={styles.toggleLabel}>Share my location</Text>
+                <Text style={styles.toggleSub}>Family will see your general whereabouts</Text>
+              </View>
+              <Switch
+                value={locationSharing}
+                onValueChange={(v) => {
+                  setLocationSharing(v);
+                  updateSettings({ locationSharing: v });
                 }}
                 trackColor={{ false: COLORS.border, true: COLORS.primary }}
                 thumbColor="#fff"
