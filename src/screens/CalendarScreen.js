@@ -727,28 +727,47 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
               ))}
             </View>
 
-            {/* Transportation */}
-            <View style={styles.toggleRow}>
+            {/* Transportation — tap entire row to toggle */}
+            <TouchableOpacity
+              style={[styles.toggleRow, form.needsRide && { backgroundColor: COLORS.primaryLight, borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.primary + '44' }]}
+              onPress={() => setField('needsRide', !form.needsRide)}
+              activeOpacity={0.8}
+            >
               <View style={styles.toggleInfo}>
                 <Text style={styles.toggleLabel}>🚗 Transportation Needed</Text>
-                <Text style={styles.toggleSub}>Visible to family when enabled</Text>
+                <Text style={styles.toggleSub}>
+                  {form.needsRide ? '✅ Family will be notified' : 'Visible to family when enabled'}
+                </Text>
               </View>
               <Switch
                 value={form.needsRide}
                 onValueChange={v => setField('needsRide', v)}
                 trackColor={{ false: COLORS.border, true: COLORS.primary }}
                 thumbColor="#fff"
+                style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
               />
-            </View>
+            </TouchableOpacity>
 
-            {/* Privacy */}
-            <View style={[styles.toggleRow, { marginBottom: 32 }]}>
+            {/* Privacy — tap entire row to toggle */}
+            <TouchableOpacity
+              style={[styles.toggleRow, { marginBottom: 32 }, form.isPrivate && form.category !== 'meds' && { backgroundColor: '#FDF2F8', borderRadius: 12, borderWidth: 1.5, borderColor: '#DB2777' + '44' }]}
+              onPress={() => {
+                if (form.category !== 'meds') {
+                  setField('isPrivate', !form.isPrivate);
+                } else {
+                  Alert.alert('Always Visible', 'Medication events are always shared for safety.');
+                }
+              }}
+              activeOpacity={0.8}
+            >
               <View style={styles.toggleInfo}>
                 <Text style={styles.toggleLabel}>🔒 Keep Private from Family</Text>
                 <Text style={styles.toggleSub}>
                   {form.category === 'meds'
                     ? 'Medication events are always shared for safety'
-                    : 'Family will see this time is busy but not the details'}
+                    : form.isPrivate
+                      ? '✅ Private — family will only see "Busy"'
+                      : 'Family will see this time is busy but not the details'}
                 </Text>
               </View>
               <Switch
@@ -762,6 +781,7 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
                 }}
                 trackColor={{ false: COLORS.border, true: '#DB2777' }}
                 thumbColor="#fff"
+                style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
               />
             </View>
 

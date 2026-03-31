@@ -195,11 +195,18 @@ function ReviewForm({ scannedData, onConfirm, onRescan }) {
 
         {/* ── Field order: pharmacist bottle label order ── */}
 
-        {/* 1. Medication Name */}
-        <Field label="Medication Name *"
-          value={form.name} onChangeText={t => setForm(p => ({ ...p, name: t }))}
-          placeholder="e.g. Lisinopril" autoCapitalize="words"
-          style={{ fontSize: 20, fontWeight: '700' }} />
+        {/* 1. Medication Name — highlighted box */}
+        <View style={styles.medNameBox}>
+          <Text style={styles.medNameBoxLabel}>💊 MEDICATION NAME</Text>
+          <TextInput
+            style={styles.medNameBoxInput}
+            value={form.name}
+            onChangeText={t => setForm(p => ({ ...p, name: t }))}
+            placeholder="e.g. Lisinopril"
+            placeholderTextColor={COLORS.textMuted}
+            autoCapitalize="words"
+          />
+        </View>
 
         {/* 2. What it's for */}
         <Field label="What it's for"
@@ -898,12 +905,14 @@ function parsePrescriptionText(text) {
   }
 
   // Build frequency: use day-specific if found, otherwise time slots
+  // Don't default to all 4 slots — only what the label actually says
   if (foundDays.length > 0) {
-    // Store days + time info together
     frequency = timeSlots.length > 0 ? timeSlots : ['morning'];
-    // Add _scheduleDays for day-of-week info
   } else if (timeSlots.length > 0) {
     frequency = timeSlots;
+  } else {
+    // Default: if nothing detected, leave empty so user selects manually
+    frequency = [];
   }
 
   // ── Step 8: Determine purpose from drug name ──────────────────────────
@@ -978,10 +987,25 @@ async function lookupNDC(barcodeData, barcodeType) {
   // Try multiple NDC format extractions from the barcode
   const ndcCandidates = extractNDCCandidates(cleaned);
 
+  // Try all NDC candidates + also try searching by package_ndc and raw barcode
+  const allSearches = [];
   for (const ndc of ndcCandidates) {
+    allSearches.push(`product_ndc:"${ndc}"`);
+    allSearches.push(`package_ndc:"${ndc}"`);
+  }
+  // Also try raw barcode digits as package NDC (refill barcodes sometimes encode full package NDC)
+  const raw = barcodeData.replace(/[^0-9]/g, '');
+  if (raw.length >= 10) {
+    allSearches.push(`package_ndc:"${raw}"`);
+    // Try with hyphens in common refill barcode formats
+    if (raw.length === 11) {
+      allSearches.push(`package_ndc:"${raw.slice(0,5)}-${raw.slice(5,9)}-${raw.slice(9)}"`);
+    }
+  }
+
+  for (const searchQuery of allSearches) {
     try {
-      // Search openFDA by product_ndc
-      const url = `https://api.fda.gov/drug/ndc.json?search=product_ndc:"${ndc}"&limit=1`;
+      const url = `https://api.fda.gov/drug/ndc.json?search=${searchQuery}&limit=1`;
       const resp = await fetch(url);
       if (!resp.ok) continue;
       const json = await resp.json();
@@ -1308,6 +1332,35 @@ const styles = StyleSheet.create({
   reviewHeader: { marginBottom: 16 },
   reviewTitle: { fontSize: 24, fontWeight: '800', color: COLORS.textPrimary },
   reviewSub: { fontSize: 15, color: COLORS.textMuted, marginTop: 3, lineHeight: 21 },
+
+  // Medication name highlighted box
+  medNameBox: {
+    backgroundColor: COLORS.primaryLight,
+    borderRadius: 16,
+    borderWidth: 2.5,
+    borderColor: COLORS.primary,
+    padding: 16,
+    marginBottom: 16,
+  },
+  medNameBoxLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  medNameBoxInput: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 56,
+  },
 
   sourceBadge: {
     backgroundColor: COLORS.primaryLight,

@@ -47,6 +47,12 @@ const TAB_BAR_STYLE = {
   shadowOpacity: 0.08,
   shadowRadius: 10,
   elevation: 12,
+  // Full width, equal spacing
+  width: '100%',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
 };
 
 const TAB_LABEL_STYLE = {
