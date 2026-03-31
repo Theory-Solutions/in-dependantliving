@@ -161,10 +161,34 @@ function ReviewForm({ scannedData, onConfirm, onRescan }) {
         </View>
 
         {/* NDC badge for barcode scans */}
-        {form._source === 'barcode' && form._ndc && (
+        {form._source === 'barcode' && form._ndc && !form._lookupError && (
           <View style={styles.ndcBadge}>
             <Text style={styles.ndcBadgeText}>
               NDC: {form._ndc} · Database match ✓
+            </Text>
+          </View>
+        )}
+
+        {/* Lookup error — drug not found */}
+        {form._lookupError && (
+          <View style={[styles.ndcBadge, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+            <Text style={[styles.ndcBadgeText, { color: '#B91C1C' }]}>
+              ⚠️ {form._lookupError}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#B91C1C', marginTop: 4 }}>
+              Barcode: {form._barcodeRaw} · Please enter details manually
+            </Text>
+          </View>
+        )}
+
+        {/* Manufacturer info if found */}
+        {form._manufacturer && (
+          <View style={[styles.ndcBadge, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+            <Text style={[styles.ndcBadgeText, { color: '#0369A1' }]}>
+              🏭 {form._manufacturer}
+              {form._genericName && form._brandName && form._genericName !== form._brandName
+                ? ` · Generic: ${form._genericName}`
+                : ''}
             </Text>
           </View>
         )}
@@ -326,35 +350,40 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
     );
   }
 
-  // ── Barcode scanned callback ─────────────────────────────────────────────
-  const handleBarcodeScanned = ({ type, data }) => {
+  // ── Barcode scanned callback — REAL FDA LOOKUP ─────────────────────────
+  const handleBarcodeScanned = async ({ type, data }) => {
     if (barcodeScanned || barcodeSearching) return;
     setBarcodeScanned(true);
     Vibration.vibrate(80);
     setBarcodeSearching(true);
 
-    // Show "Searching drug database..." for 800ms, then show mock NDC result
-    setTimeout(() => {
+    try {
+      const result = await lookupNDC(data, type);
       setBarcodeSearching(false);
-      const mockNDCResult = {
-        name: 'Metformin',
-        dosage: '500mg',
-        quantity: 2,
-        purpose: 'Type 2 Diabetes',
-        directions: 'Take 2 tablets twice daily with meals to reduce stomach upset.',
-        pillsRemaining: 60,
-        pillsTotal: 60,
+      setScannedData(result);
+      setStep('review');
+    } catch (e) {
+      setBarcodeSearching(false);
+      // Fallback: let user enter manually with barcode data shown
+      setScannedData({
+        name: '',
+        dosage: '',
+        quantity: 1,
+        purpose: '',
+        directions: '',
+        pillsRemaining: 0,
+        pillsTotal: 0,
         daysSupply: 30,
-        refillsRemaining: 3,
-        frequency: ['morning', 'evening'],
+        refillsRemaining: 0,
+        frequency: [],
         _source: 'barcode',
-        _ndc: '0093-1031-01',
+        _ndc: data,
         _barcodeRaw: data,
         _barcodeType: type,
-      };
-      setScannedData(mockNDCResult);
+        _lookupError: e.message || 'Could not find this medication in the database',
+      });
       setStep('review');
-    }, 800);
+    }
   };
 
   // ── Start rotation capture ───────────────────────────────────────────────
@@ -633,23 +662,125 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
 }
 
 // ── Barcode data parser ────────────────────────────────────────────────────────
-function parseBarcodeData(data, type) {
-  // Real implementation would look up NDC codes in a drug database
-  // For prototype, return a realistic mock with the raw barcode data shown
-  return {
-    name: '',
-    dosage: '',
-    quantity: 1,
-    purpose: '',
-    directions: '',
-    pillsRemaining: 0,
-    pillsTotal: 0,
-    daysSupply: 30,
-    refillsRemaining: 0,
-    frequency: [],
-    _barcodeRaw: data,
-    _barcodeType: type,
-  };
+// ── Real NDC drug database lookup via openFDA ──────────────────────────────
+// Barcode formats on prescription bottles:
+// - UPC-A (12 digits) or EAN-13 (13 digits) — contains NDC embedded
+// - Code 128 — may contain NDC directly
+// - The NDC is a 10-digit code formatted as 4-4-2, 5-3-2, or 5-4-1
+// openFDA API: https://api.fda.gov/drug/ndc.json
+
+async function lookupNDC(barcodeData, barcodeType) {
+  // Clean the barcode data — extract potential NDC
+  const cleaned = barcodeData.replace(/[^0-9]/g, '');
+
+  // Try multiple NDC format extractions from the barcode
+  const ndcCandidates = extractNDCCandidates(cleaned);
+
+  for (const ndc of ndcCandidates) {
+    try {
+      // Search openFDA by product_ndc
+      const url = `https://api.fda.gov/drug/ndc.json?search=product_ndc:"${ndc}"&limit=1`;
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const json = await resp.json();
+
+      if (json.results && json.results.length > 0) {
+        const drug = json.results[0];
+
+        // Extract useful fields
+        const brandName = drug.brand_name || drug.generic_name || '';
+        const genericName = drug.generic_name || '';
+        const strength = drug.active_ingredients?.[0]?.strength || '';
+        const dosageForm = drug.dosage_form || '';
+        const route = drug.route?.[0] || '';
+        const manufacturer = drug.labeler_name || '';
+
+        // Try to get labeling info (directions, purpose) from the drug label API
+        let directions = '';
+        let purpose = '';
+        try {
+          const labelUrl = `https://api.fda.gov/drug/label.json?search=openfda.product_ndc:"${ndc}"&limit=1`;
+          const labelResp = await fetch(labelUrl);
+          if (labelResp.ok) {
+            const labelJson = await labelResp.json();
+            if (labelJson.results?.[0]) {
+              const label = labelJson.results[0];
+              directions = (label.dosage_and_administration || []).join(' ').slice(0, 300) || '';
+              purpose = (label.purpose || label.indications_and_usage || []).join(' ').slice(0, 200) || '';
+            }
+          }
+        } catch (e) { /* label lookup is optional */ }
+
+        return {
+          name: brandName || genericName,
+          dosage: strength,
+          quantity: 1,
+          purpose: purpose || `${dosageForm} — ${route}`.trim(),
+          directions: directions || `Take as directed by your doctor. ${dosageForm} ${route ? 'via ' + route : ''}.`.trim(),
+          pillsRemaining: 0,
+          pillsTotal: 0,
+          daysSupply: 30,
+          refillsRemaining: 0,
+          frequency: [],
+          _source: 'barcode',
+          _ndc: ndc,
+          _barcodeRaw: barcodeData,
+          _barcodeType: barcodeType,
+          _manufacturer: manufacturer,
+          _genericName: genericName,
+          _brandName: brandName,
+          _dosageForm: dosageForm,
+        };
+      }
+    } catch (e) {
+      continue; // try next candidate
+    }
+  }
+
+  throw new Error(`No drug found for barcode: ${barcodeData}`);
+}
+
+// Extract potential NDC numbers from a barcode string
+// UPC-A barcodes: strip leading 0 and check digit → yields 10-digit NDC
+// Various NDC formats: 4-4-2, 5-3-2, 5-4-1
+function extractNDCCandidates(digits) {
+  const candidates = [];
+
+  // If it's a UPC-A (12 digits), the NDC is digits 1-10 (strip leading 0 and trailing check digit)
+  if (digits.length === 12) {
+    const ndc10 = digits.slice(1, 11);
+    // Format as 5-4-1 (most common)
+    candidates.push(`${ndc10.slice(0, 5)}-${ndc10.slice(5, 9)}-${ndc10.slice(9)}`);
+    // Format as 4-4-2
+    candidates.push(`${ndc10.slice(0, 4)}-${ndc10.slice(4, 8)}-${ndc10.slice(8)}`);
+    // Format as 5-3-2
+    candidates.push(`${ndc10.slice(0, 5)}-${ndc10.slice(5, 8)}-${ndc10.slice(8)}`);
+    // Plain 10-digit
+    candidates.push(ndc10);
+  }
+
+  // If it's already 10-11 digits, try formatting it directly
+  if (digits.length === 10 || digits.length === 11) {
+    const d = digits.slice(0, 10);
+    candidates.push(`${d.slice(0, 5)}-${d.slice(5, 9)}-${d.slice(9)}`);
+    candidates.push(`${d.slice(0, 4)}-${d.slice(4, 8)}-${d.slice(8)}`);
+    candidates.push(`${d.slice(0, 5)}-${d.slice(5, 8)}-${d.slice(8)}`);
+    candidates.push(d);
+  }
+
+  // EAN-13: strip leading 0 + trailing check digit
+  if (digits.length === 13) {
+    const ndc10 = digits.slice(1, 11);
+    candidates.push(`${ndc10.slice(0, 5)}-${ndc10.slice(5, 9)}-${ndc10.slice(9)}`);
+    candidates.push(ndc10);
+  }
+
+  // Raw string as-is (in case it's already formatted)
+  if (digits.length >= 9 && digits.length <= 12) {
+    candidates.push(digits);
+  }
+
+  return [...new Set(candidates)]; // deduplicate
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
