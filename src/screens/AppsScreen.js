@@ -30,13 +30,7 @@ const APP_SECTIONS = [
         badgeColor: '#1A6FA3',
         description: 'Steps, heart rate, fall detection, ECG, sleep, blood oxygen — all automatic via Apple Health',
         platform: 'iOS',
-        connected: true,
-        data: [
-          { label: 'Steps', value: '3,241', icon: '👟' },
-          { label: 'Heart Rate', value: '68 bpm', icon: '❤️' },
-          { label: 'Sleep', value: '7h 12m', icon: '😴' },
-        ],
-        lastSync: '12 min ago',
+        connected: false,
         highlight: true,
       },
       {
@@ -50,16 +44,6 @@ const APP_SECTIONS = [
         connected: false,
       },
       {
-        id: 'galaxy_watch',
-        icon: '🌀',
-        name: 'Galaxy Watch',
-        badge: 'Best for Android',
-        badgeColor: '#1A6FA3',
-        description: 'Steps, heart rate, sleep, blood oxygen via Google Health Connect.',
-        platform: 'Android',
-        connected: false,
-      },
-      {
         id: 'apple_health',
         icon: '❤️',
         name: 'Apple Health',
@@ -67,106 +51,6 @@ const APP_SECTIONS = [
         badgeColor: '#FF2D55',
         description: 'Aggregates data from Apple Watch, iPhone, and any HealthKit-compatible device.',
         platform: 'iOS',
-        connected: true,
-        data: [
-          { label: 'Steps today', value: '3,241', icon: '👟' },
-          { label: 'Stand hours', value: '8 / 12', icon: '🧍' },
-        ],
-        lastSync: 'Live',
-      },
-      {
-        id: 'google_fit',
-        icon: '🏋️',
-        name: 'Google Fit / Health Connect',
-        badge: 'Android built-in',
-        badgeColor: '#34A853',
-        description: 'Aggregates data from Galaxy Watch, Pixel Watch, Fitbit, Garmin, and more on Android.',
-        platform: 'Android',
-        connected: false,
-      },
-      {
-        id: 'garmin',
-        icon: '🗺️',
-        name: 'Garmin Connect',
-        description: 'Activity, GPS, heart rate via Apple Health or Google Fit.',
-        platform: 'both',
-        connected: false,
-      },
-    ],
-  },
-  {
-    title: '🩸 Health Monitoring',
-    subtitle: 'Medical devices and continuous monitors',
-    apps: [
-      {
-        id: 'dexcom',
-        icon: '📊',
-        name: 'Dexcom G7',
-        badge: 'CGM',
-        badgeColor: '#7C3AED',
-        description: 'Continuous glucose monitoring. Alerts family if blood sugar goes out of range.',
-        platform: 'both',
-        connected: true,
-        data: [
-          { label: 'Glucose', value: '124 mg/dL', icon: '📊' },
-          { label: 'Trend', value: '→ Stable', icon: '📈' },
-        ],
-        lastSync: '5 min ago',
-      },
-      {
-        id: 'libre',
-        icon: '💉',
-        name: 'FreeStyle Libre 3',
-        badge: 'CGM',
-        badgeColor: '#7C3AED',
-        description: 'Continuous glucose sensor — alternative to Dexcom.',
-        platform: 'both',
-        connected: false,
-      },
-      {
-        id: 'omron',
-        icon: '🩺',
-        name: 'Omron Blood Pressure',
-        description: 'Wireless blood pressure monitor sync via Bluetooth.',
-        platform: 'both',
-        connected: false,
-      },
-      {
-        id: 'withings',
-        icon: '⚖️',
-        name: 'Withings Health',
-        description: 'Smart scale, blood pressure, sleep tracker.',
-        platform: 'both',
-        connected: false,
-      },
-    ],
-  },
-  {
-    title: '🏥 Medical & Safety',
-    subtitle: 'Health records, patient portals, and safety',
-    apps: [
-      {
-        id: 'mychart',
-        icon: '🏥',
-        name: 'MyChart (Epic)',
-        description: 'Patient portal — appointments, lab results, messages to your doctor.',
-        platform: 'both',
-        connected: false,
-      },
-      {
-        id: 'pillsy',
-        icon: '💊',
-        name: 'Pillsy Smart Pill Cap',
-        description: 'Smart pill bottle lid that auto-logs when you open it. Eliminates manual check-ins.',
-        platform: 'both',
-        connected: false,
-      },
-      {
-        id: 'life_alert',
-        icon: '🆘',
-        name: 'Life Alert / Medical Alert',
-        description: 'Emergency response integration. Alerts family and 911 automatically.',
-        platform: 'both',
         connected: false,
       },
     ],
@@ -292,7 +176,7 @@ export default function AppsScreen() {
         <View style={styles.platformNote}>
           <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
           <Text style={styles.platformNoteText}>
-            In-Dependent works with <Text style={styles.bold}>iPhone and Android</Text>. Apple Watch users get automatic HealthKit sync. Fitbit, Galaxy Watch, and Garmin users connect via their own apps.
+            In-Dependent works with <Text style={styles.bold}>iPhone and Android</Text>. Apple Watch users get automatic HealthKit sync. Fitbit users connect via the Fitbit app.
           </Text>
         </View>
 

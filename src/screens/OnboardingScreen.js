@@ -50,15 +50,15 @@ export default function OnboardingScreen() {
             style={styles.roleCard}
             onPress={() => setRole('senior')}
             activeOpacity={0.85}
-            accessibilityLabel="I am being monitored"
+            accessibilityLabel="Independent"
             accessibilityRole="button"
           >
             <View style={styles.roleIconWrap}>
               <Text style={styles.roleEmoji}>🏠</Text>
             </View>
             <View style={styles.roleText}>
-              <Text style={styles.roleTitle}>I'm being monitored</Text>
-              <Text style={styles.roleSub}>For seniors, people with disabilities, or anyone using a check-in system</Text>
+              <Text style={styles.roleTitle}>Independent</Text>
+              <Text style={styles.roleSub}>For anyone living independently who wants to stay connected and on track</Text>
             </View>
             <View style={styles.roleArrow}>
               <Text style={styles.roleArrowText}>›</Text>
@@ -77,15 +77,15 @@ export default function OnboardingScreen() {
             style={[styles.roleCard, styles.roleCardSecondary]}
             onPress={() => setRole('family')}
             activeOpacity={0.85}
-            accessibilityLabel="I am a caregiver"
+            accessibilityLabel="Independent Family / Care"
             accessibilityRole="button"
           >
             <View style={[styles.roleIconWrap, styles.roleIconWrapSecondary]}>
               <Text style={styles.roleEmoji}>👥</Text>
             </View>
             <View style={styles.roleText}>
-              <Text style={[styles.roleTitle, styles.roleTitleSecondary]}>I'm a caregiver</Text>
-              <Text style={styles.roleSub}>For family members or anyone monitoring a loved one</Text>
+              <Text style={[styles.roleTitle, styles.roleTitleSecondary]}>Independent Family / Care</Text>
+              <Text style={styles.roleSub}>For family members or caregivers supporting a loved one</Text>
             </View>
             <View style={[styles.roleArrow, styles.roleArrowSecondary]}>
               <Text style={[styles.roleArrowText, styles.roleArrowTextSecondary]}>›</Text>

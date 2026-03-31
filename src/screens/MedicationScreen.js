@@ -168,24 +168,21 @@ export default function MedicationScreen({ navigation }) {
                 return (
                   <TouchableOpacity
                     key={`${med.id}-${s}`}
-                    style={[styles.medCard, taken && styles.medCardDone, !isCurrent && styles.medCardDimmed]}
-                    onPress={() => isCurrent && markMedicationTaken(med.id, s)}
-                    activeOpacity={isCurrent ? 0.8 : 1}
+                    style={[styles.medCard, taken && styles.medCardDone]}
+                    onPress={() => markMedicationTaken(med.id, s)}
+                    activeOpacity={0.8}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: taken }}
                   >
                     {/* Checkbox */}
                     <TouchableOpacity
                       style={[styles.checkbox, taken ? styles.checkboxDone : styles.checkboxPending]}
-                      onPress={() => isCurrent && markMedicationTaken(med.id, s)}
-                      disabled={!isCurrent}
+                      onPress={() => markMedicationTaken(med.id, s)}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                       {taken
                         ? <Text style={styles.checkmarkDone}>✓</Text>
-                        : isCurrent
-                          ? <Text style={styles.checkmarkPending}>tap</Text>
-                          : null
+                        : <Text style={styles.checkmarkPending}>tap</Text>
                       }
                     </TouchableOpacity>
 
@@ -196,10 +193,8 @@ export default function MedicationScreen({ navigation }) {
 
                     {taken ? (
                       <View style={styles.takenPill}><Text style={styles.takenPillText}>Taken ✓</Text></View>
-                    ) : isCurrent ? (
-                      <View style={styles.pendingPill}><Text style={styles.pendingPillText}>Confirm</Text></View>
                     ) : (
-                      <View style={styles.upcomingPill}><Text style={styles.upcomingPillText}>Upcoming</Text></View>
+                      <View style={styles.pendingPill}><Text style={styles.pendingPillText}>Confirm</Text></View>
                     )}
                   </TouchableOpacity>
                 );

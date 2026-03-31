@@ -17,21 +17,12 @@ import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 // User name comes from Firebase auth or defaults to 'Friend'
 
-const MOCK_CONTACTS = [
-  { id: '1', name: 'David',    relation: 'Son',      avatar: '👨',    phone: '+15205551234' },
-  { id: '2', name: 'Sarah',    relation: 'Daughter', avatar: '👩',    phone: '+15205555678' },
-  { id: '3', name: 'Dr. Smith',relation: 'Doctor',   avatar: '👨‍⚕️', phone: '+15205559012' },
-];
+const MOCK_CONTACTS = [];
 
-const MOCK_STEPS = 3241;
+const MOCK_STEPS = 0;
 const STEP_GOAL = 10000;
 
-const MOCK_SCHEDULE = [
-  { time: '10:00 AM', label: 'Morning Walk',        icon: '🚶', type: 'activity' },
-  { time: '2:30 PM',  label: 'Doctor Appointment',  icon: '🏥', type: 'appointment', detail: 'Dr. Smith — Annual Checkup' },
-  { time: '6:00 PM',  label: 'Evening Medications', icon: '💊', type: 'meds' },
-  { time: '8:00 PM',  label: 'Call with Family',    icon: '📞', type: 'social' },
-];
+const MOCK_SCHEDULE = [];
 
 const SCHEDULE_COLORS = {
   meds:        '#1A6FA3',
@@ -156,7 +147,7 @@ export default function SeniorHomeScreen({ navigation }) {
                 <Text style={styles.cardAction}>See All →</Text>
               </TouchableOpacity>
             </View>
-            {MOCK_SCHEDULE.map((event, i) => (
+            {MOCK_SCHEDULE.length > 0 ? MOCK_SCHEDULE.map((event, i) => (
               <TouchableOpacity
                 key={i}
                 style={[styles.scheduleRow, i === MOCK_SCHEDULE.length - 1 && styles.scheduleRowLast]}
@@ -171,7 +162,13 @@ export default function SeniorHomeScreen({ navigation }) {
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
               </TouchableOpacity>
-            ))}
+            )) : (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 }}>
+                  No events today — tap + in Calendar to add one
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* ── 2. TODAY'S STEPS ── */}
@@ -187,15 +184,26 @@ export default function SeniorHomeScreen({ navigation }) {
               <Text style={styles.cardTitle}>Today's Steps</Text>
               <Text style={styles.cardAction}>View Apps →</Text>
             </View>
-            <Text style={styles.stepsCount}>{MOCK_STEPS.toLocaleString()}</Text>
-            <Text style={styles.stepsGoal}>Daily goal: {STEP_GOAL.toLocaleString()} steps</Text>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${stepsPct}%` }]} />
-            </View>
-            <View style={styles.stepsBottomRow}>
-              <Text style={styles.stepsPct}>{Math.round(stepsPct)}% of goal</Text>
-              <Text style={styles.stepsRemaining}>{(STEP_GOAL - MOCK_STEPS).toLocaleString()} steps to go</Text>
-            </View>
+            {MOCK_STEPS > 0 ? (
+              <>
+                <Text style={styles.stepsCount}>{MOCK_STEPS.toLocaleString()}</Text>
+                <Text style={styles.stepsGoal}>Daily goal: {STEP_GOAL.toLocaleString()} steps</Text>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${stepsPct}%` }]} />
+                </View>
+                <View style={styles.stepsBottomRow}>
+                  <Text style={styles.stepsPct}>{Math.round(stepsPct)}% of goal</Text>
+                  <Text style={styles.stepsRemaining}>{(STEP_GOAL - MOCK_STEPS).toLocaleString()} steps to go</Text>
+                </View>
+              </>
+            ) : (
+              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <Text style={styles.stepsCount}>0</Text>
+                <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, marginTop: 4 }}>
+                  Connect a fitness tracker to see your steps
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {/* ── 3. WEATHER ── */}
@@ -233,29 +241,43 @@ export default function SeniorHomeScreen({ navigation }) {
               <Text style={styles.cardIcon}>📞</Text>
               <Text style={styles.cardTitle}>Call Family</Text>
             </View>
-            <Text style={styles.callSubtext}>One tap to connect with your loved ones</Text>
-            <View style={styles.callGrid}>
-              {MOCK_CONTACTS.map(contact => (
-                <TouchableOpacity
-                  key={contact.id}
-                  style={styles.callCard}
-                  onPress={() => handleCall(contact)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.callAvatar}>{contact.avatar}</Text>
-                  <Text style={styles.callName}>{contact.name}</Text>
-                  <Text style={styles.callRelation}>{contact.relation}</Text>
-                  <View style={styles.callBtn}>
-                    <Ionicons name="videocam" size={18} color="#fff" />
-                    <Text style={styles.callBtnText}>Video</Text>
-                  </View>
+            {MOCK_CONTACTS.length > 0 ? (
+              <>
+                <Text style={styles.callSubtext}>One tap to connect with your loved ones</Text>
+                <View style={styles.callGrid}>
+                  {MOCK_CONTACTS.map(contact => (
+                    <TouchableOpacity
+                      key={contact.id}
+                      style={styles.callCard}
+                      onPress={() => handleCall(contact)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.callAvatar}>{contact.avatar}</Text>
+                      <Text style={styles.callName}>{contact.name}</Text>
+                      <Text style={styles.callRelation}>{contact.relation}</Text>
+                      <View style={styles.callBtn}>
+                        <Ionicons name="videocam" size={18} color="#fff" />
+                        <Text style={styles.callBtnText}>Video</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity style={styles.addContactCard} activeOpacity={0.8}>
+                    <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
+                    <Text style={styles.addContactText}>Add Contact</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 }}>
+                  Add your emergency contacts in Settings
+                </Text>
+                <TouchableOpacity style={styles.addContactCard} activeOpacity={0.8} onPress={() => goToTab('Settings')}>
+                  <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
+                  <Text style={styles.addContactText}>Add Contact</Text>
                 </TouchableOpacity>
-              ))}
-              <TouchableOpacity style={styles.addContactCard} activeOpacity={0.8}>
-                <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
-                <Text style={styles.addContactText}>Add Contact</Text>
-              </TouchableOpacity>
-            </View>
+              </View>
+            )}
           </View>
 
           {/* ── QUICK STATS (all hot buttons) ── */}

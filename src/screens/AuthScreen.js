@@ -228,7 +228,7 @@ function RoleSelector({ selectedRole, onSelect }) {
       >
         <Text style={styles.roleEmoji}>🏠</Text>
         <Text style={[styles.roleOptionText, selectedRole === 'senior' && styles.roleOptionTextActive]}>
-          I'm being monitored
+          Independent
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -238,7 +238,7 @@ function RoleSelector({ selectedRole, onSelect }) {
       >
         <Text style={styles.roleEmoji}>👥</Text>
         <Text style={[styles.roleOptionText, selectedRole === 'family' && styles.roleOptionTextActive]}>
-          I'm a caregiver
+          Independent Family / Care
         </Text>
       </TouchableOpacity>
     </View>

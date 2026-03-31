@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 
 const { width, height } = Dimensions.get('window');
@@ -318,6 +319,7 @@ function Field({ label, ...props }) {
 
 // ─── Main scanner screen ─────────────────────────────────────────────────────
 export default function ScannerScreen({ navigation, onMedicationScanned }) {
+  const { addMedication } = useApp();
   const [permission, requestPermission] = useCameraPermissions();
   const [step, setStep] = useState('position');  // position | rotate | barcode | review | done
   const [scanMode, setScanMode] = useState('label');
@@ -481,6 +483,23 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
 
   // ── Confirm and save ─────────────────────────────────────────────────────
   const handleConfirm = (data) => {
+    // Save to app state / Firebase
+    try {
+      addMedication({
+        name: data.name,
+        dosage: data.dosage,
+        quantity: data.quantity || 1,
+        frequency: data.frequency || [],
+        purpose: data.purpose || '',
+        directions: data.directions || '',
+        pillsRemaining: data.pillsRemaining || 0,
+        pillsTotal: data.pillsTotal || 0,
+        daysSupply: data.daysSupply || 30,
+        refillsRemaining: data.refillsRemaining || 0,
+      });
+    } catch (e) {
+      console.log('Error saving medication:', e);
+    }
     if (onMedicationScanned) {
       onMedicationScanned(data);
     }
