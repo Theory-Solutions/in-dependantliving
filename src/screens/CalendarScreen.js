@@ -783,7 +783,7 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
                 thumbColor="#fff"
                 style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
               />
-            </View>
+            </TouchableOpacity>
 
             {/* Save button */}
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>

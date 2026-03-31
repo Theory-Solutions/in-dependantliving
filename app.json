@@ -17,7 +17,8 @@
         "NSCameraUsageDescription": "In-dependent Living uses the camera to scan prescription bottle labels and barcodes so your medications can be added automatically.",
         "NSMicrophoneUsageDescription": "Microphone access is required by the camera system.",
         "NSPhotoLibraryUsageDescription": "In-dependent Living uses your photo library so caregivers can upload a profile photo for their loved one."
-      }
+      },
+      "bundleIdentifier": "com.theorysolutions.independentliving"
     },
     "android": {
       "permissions": [
@@ -29,7 +30,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.theorysolutions.independentliving"
     },
     "web": {
       "favicon": "./assets/favicon.png"

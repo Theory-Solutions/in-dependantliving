@@ -18,7 +18,21 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "ios": {
+        "image": "latest"
+      },
+      "android": {
+        "image": "latest"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "justin.dallaire@theory-solutions.com",
+        "appleTeamId": "ADS88L94Q4"
+      }
     }
   }
 }
