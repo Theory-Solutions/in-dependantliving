@@ -738,8 +738,37 @@ async function runVisionOCR(base64Image, source) {
 
 // ── Parse raw OCR text from a prescription label ────────────────────────────
 function parsePrescriptionText(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const rawLines = text.split('\n').map(l => l.trim()).filter(Boolean);
   const fullLower = text.toLowerCase();
+
+  // ── Step 1: Filter out pharmacy junk (address, phone, store info) ──────
+  const JUNK_PATTERNS = [
+    /\b\d{5}(-\d{4})?\b/,                        // ZIP codes
+    /\(\d{3}\)\s*\d{3}[- ]?\d{4}/,               // Phone (xxx) xxx-xxxx
+    /\b\d{3}[- ]\d{3}[- ]\d{4}\b/,               // Phone xxx-xxx-xxxx
+    /\b(pharmacy|drug\s?store|walgreens|cvs|rite\s?aid|walmart|costco|kroger|safeway|albertsons|publix|heb|winn.dixie|target)\b/i,
+    /\b(suite|ste|blvd|boulevard|avenue|ave|street|st|road|rd|drive|dr|lane|ln|way|circle|cir|plaza|plz|parkway|pkwy)\b.*\b[A-Z]{2}\b/i,
+    /\b(tucson|phoenix|mesa|scottsdale|tempe|chandler|gilbert|glendale|peoria|surprise|flagstaff|sedona|yuma|prescott)\b/i,
+    /\b(AZ|CA|TX|FL|NY|NV|CO|UT|NM|OR|WA|OH|PA|IL|GA|NC|VA|MA|MI|MN|TN|IN|WI|MO|MD|SC|AL|LA|KY|OK|CT|IA|MS|AR|KS|NE|HI|ID|MT|ND|SD|WV|WY|VT|NH|ME|RI|DE|DC)\s+\d{5}/,
+    /\b(www\.|\.com|\.net|\.org|http)/i,          // URLs
+    /^\d+\s+(north|south|east|west|n|s|e|w)\b/i,  // Street addresses
+    /\brx\s*(#|number|no)?\s*:?\s*\d+/i,          // Rx number
+    /\b(date|filled|dispensed)\s*:?\s*\d/i,        // Fill dates
+    /\b(ndc|din|npi|dea)\s*:?\s*[\d-]/i,          // Regulatory numbers
+    /\b(rpn|pharmacist|rph|pharm\.?d)\b/i,         // Pharmacist credentials
+    /\b(store|location)\s*#?\s*\d/i,               // Store numbers
+    /^\d{10,}$/,                                    // Long number strings (barcodes)
+  ];
+
+  const cleanLines = rawLines.filter(line => {
+    const l = line.toLowerCase();
+    if (line.length < 3) return false;
+    if (/^\d+$/.test(line)) return false;  // pure numbers
+    for (const pat of JUNK_PATTERNS) {
+      if (pat.test(line)) return false;
+    }
+    return true;
+  });
 
   let name = '';
   let dosage = '';
@@ -747,76 +776,177 @@ function parsePrescriptionText(text) {
   let purpose = '';
   let directions = '';
   let refills = 0;
+  let frequency = [];
+  let daysSupply = 30;
+  let pillsTotal = 0;
 
-  // Common patterns on prescription labels:
-  // Drug name is usually the largest/boldest text — often near the top
-  // Look for patterns like "LISINOPRIL 10MG" or "Metformin HCl 500mg"
-
-  // Extract drug name + dosage (look for word followed by mg/mcg/ml pattern)
-  const drugPattern = /([A-Za-z][A-Za-z\s\-]+?)\s*(\d+\.?\d*\s*(?:mg|mcg|ml|g|units|%|MG|MCG|ML))/i;
+  // ── Step 2: Extract drug name + dosage ─────────────────────────────────
+  // Pattern: word(s) followed by dosage amount
+  const drugPattern = /\b([A-Za-z][A-Za-z\s\-]{2,30}?)\s*(\d+\.?\d*\s*(?:mg|mcg|ml|g|units|%|MG|MCG|ML|meq))\b/i;
   const drugMatch = text.match(drugPattern);
   if (drugMatch) {
-    name = drugMatch[1].trim().replace(/\b(tablets?|capsules?|oral|solution)\b/gi, '').trim();
+    let rawName = drugMatch[1].trim();
+    // Clean common suffixes that aren't the drug name
+    rawName = rawName.replace(/\b(tablets?|capsules?|oral|solution|extended.release|er|hcl|hct|cr|sr|xl|xr|dr)\s*$/gi, '').trim();
+    // Remove if it starts with junk words
+    rawName = rawName.replace(/^(the|a|an|one|each|new)\s+/i, '').trim();
+    name = rawName;
     dosage = drugMatch[2].trim();
   }
 
-  // Extract directions — look for "take", "use", "apply" lines
-  const dirPatterns = [
-    /(?:take|use|apply|inject|inhale|instill)[^\n\.]*(?:\.|$)/gi,
-    /(?:by mouth|orally|topically|twice daily|once daily|every \d+ hours?|with food|at bedtime)[^\n]*(?:\.|$)/gi,
+  // ── Step 3: Extract directions (the most important text) ───────────────
+  // Look for sentences starting with action words
+  const dirLines = [];
+  for (const line of rawLines) {
+    const l = line.toLowerCase();
+    if (/\b(take|use|apply|inject|inhale|instill|place|swallow|chew|dissolve)\b/.test(l) && line.length > 10) {
+      dirLines.push(line);
+    }
+    if (/\b(by mouth|orally|topically|twice|once daily|every \d+|with food|with meal|at bedtime|before bed|in the morning|in the evening)\b/i.test(l) && line.length > 10) {
+      if (!dirLines.includes(line)) dirLines.push(line);
+    }
+  }
+  directions = dirLines.join(' ').replace(/\s+/g, ' ').trim();
+
+  // If no directions, look for the longest clean line with medication keywords
+  if (!directions) {
+    const candidates = cleanLines.filter(l =>
+      /tablet|capsule|daily|hour|food|mouth|dose|times|twice|morning|evening|night/i.test(l) && l.length > 15
+    ).sort((a, b) => b.length - a.length);
+    if (candidates.length > 0) directions = candidates[0];
+  }
+
+  // ── Step 4: Extract quantity per dose ──────────────────────────────────
+  const qtyPatterns = [
+    /take\s+(\d+)\s+(?:tablet|capsule|pill|cap|tab)/i,
+    /(\d+)\s+(?:tablet|capsule|pill|cap|tab)\s+(?:by|per|each)/i,
+    /qty[:\s]*(\d+)/i,
   ];
-  for (const pat of dirPatterns) {
-    const matches = text.match(pat);
-    if (matches) {
-      directions = matches.join(' ').trim();
-      break;
+  for (const pat of qtyPatterns) {
+    const m = text.match(pat);
+    if (m) {
+      const n = parseInt(m[1]);
+      if (n >= 1 && n <= 10) { quantity = n; break; }
     }
   }
 
-  // If no directions found, look for the longest line that seems like instructions
-  if (!directions) {
-    const instructionLine = lines.find(l =>
-      /take|use|apply|tablet|capsule|daily|hour|food|mouth|dose/i.test(l) && l.length > 20
-    );
-    if (instructionLine) directions = instructionLine;
-  }
+  // ── Step 5: Extract total pill count / days supply ─────────────────────
+  const totalMatch = text.match(/(?:qty|quantity|#)[:\s]*(\d+)/i);
+  if (totalMatch) pillsTotal = parseInt(totalMatch[1]);
 
-  // Extract quantity — "take 2 tablets" or "qty: 30"
-  const qtyMatch = text.match(/(?:take|qty|quantity)[:\s]*(\d+)/i);
-  if (qtyMatch) {
-    const n = parseInt(qtyMatch[1]);
-    if (n <= 10) quantity = n; // per-dose quantity
-  }
+  const supplyMatch = text.match(/(?:day(?:s)?\.?\s*supply|supply)[:\s]*(\d+)/i);
+  if (supplyMatch) daysSupply = parseInt(supplyMatch[1]);
 
-  // Extract refills
-  const refillMatch = text.match(/(?:refills?|ref)[:\s]*(\d+)/i);
+  // ── Step 6: Extract refills ────────────────────────────────────────────
+  const refillMatch = text.match(/(?:refills?\s*(?:remaining|left|:|\s))\s*(\d+)/i) ||
+                      text.match(/(\d+)\s*refills?\s*(?:remaining|left|by)/i);
   if (refillMatch) refills = parseInt(refillMatch[1]);
 
-  // Try to identify purpose from common keywords
+  // ── Step 7: Determine frequency — SMART day/time detection ─────────────
+  const freqLower = (directions + ' ' + text).toLowerCase();
+
+  // Day-of-week patterns
+  const dayMap = {
+    'monday': 'monday', 'mon': 'monday',
+    'tuesday': 'tuesday', 'tue': 'tuesday', 'tues': 'tuesday',
+    'wednesday': 'wednesday', 'wed': 'wednesday',
+    'thursday': 'thursday', 'thu': 'thursday', 'thur': 'thursday', 'thurs': 'thursday',
+    'friday': 'friday', 'fri': 'friday',
+    'saturday': 'saturday', 'sat': 'saturday',
+    'sunday': 'sunday', 'sun': 'sunday',
+  };
+
+  const foundDays = [];
+  for (const [abbr, full] of Object.entries(dayMap)) {
+    if (new RegExp('\\b' + abbr + '\\b', 'i').test(freqLower)) {
+      if (!foundDays.includes(full)) foundDays.push(full);
+    }
+  }
+
+  // MWF or M/W/F patterns
+  if (/\bm\s*[\/,]\s*w\s*[\/,]\s*f\b/i.test(freqLower) || /\bmwf\b/i.test(freqLower)) {
+    foundDays.length = 0;
+    foundDays.push('monday', 'wednesday', 'friday');
+  }
+  if (/\bt\s*[\/,]\s*th\b/i.test(freqLower) || /\btth\b/i.test(freqLower)) {
+    if (!foundDays.includes('tuesday')) foundDays.push('tuesday');
+    if (!foundDays.includes('thursday')) foundDays.push('thursday');
+  }
+
+  // Time-of-day patterns
+  const timeSlots = [];
+  if (/\b(morning|am|a\.m\.|breakfast|before noon|upon waking)\b/i.test(freqLower)) timeSlots.push('morning');
+  if (/\b(afternoon|midday|lunch|noon)\b/i.test(freqLower)) timeSlots.push('afternoon');
+  if (/\b(evening|pm|p\.m\.|dinner|supper)\b/i.test(freqLower)) timeSlots.push('evening');
+  if (/\b(night|bedtime|before bed|at night|nightly|hs)\b/i.test(freqLower)) timeSlots.push('night');
+
+  // Frequency multipliers
+  if (/\b(twice|two times|2\s*times|bid|b\.i\.d)\b/i.test(freqLower) && timeSlots.length === 0) {
+    timeSlots.push('morning', 'evening');
+  }
+  if (/\b(three times|3\s*times|tid|t\.i\.d)\b/i.test(freqLower) && timeSlots.length === 0) {
+    timeSlots.push('morning', 'afternoon', 'evening');
+  }
+  if (/\b(four times|4\s*times|qid|q\.i\.d)\b/i.test(freqLower) && timeSlots.length === 0) {
+    timeSlots.push('morning', 'afternoon', 'evening', 'night');
+  }
+  if (/\b(once daily|daily|every day|qd|q\.d)\b/i.test(freqLower) && timeSlots.length === 0) {
+    timeSlots.push('morning');
+  }
+  if (/\b(every other day|eod|alternate day)\b/i.test(freqLower) && timeSlots.length === 0) {
+    timeSlots.push('morning');
+  }
+
+  // Build frequency: use day-specific if found, otherwise time slots
+  if (foundDays.length > 0) {
+    // Store days + time info together
+    frequency = timeSlots.length > 0 ? timeSlots : ['morning'];
+    // Add _scheduleDays for day-of-week info
+  } else if (timeSlots.length > 0) {
+    frequency = timeSlots;
+  }
+
+  // ── Step 8: Determine purpose from drug name ──────────────────────────
+  const drugLookup = (name + ' ' + fullLower).toLowerCase();
   const purposeMap = [
-    { keywords: ['blood pressure', 'hypertension', 'htn'], purpose: 'High blood pressure' },
-    { keywords: ['diabetes', 'blood sugar', 'glucose', 'metformin'], purpose: 'Type 2 diabetes' },
-    { keywords: ['cholesterol', 'lipid', 'statin', 'atorvastatin'], purpose: 'High cholesterol' },
-    { keywords: ['infection', 'antibiotic', 'amoxicillin', 'ciprofloxacin'], purpose: 'Bacterial infection' },
-    { keywords: ['pain', 'analgesic', 'ibuprofen', 'acetaminophen'], purpose: 'Pain relief' },
-    { keywords: ['acid reflux', 'heartburn', 'omeprazole', 'pantoprazole', 'gerd'], purpose: 'Acid reflux' },
-    { keywords: ['thyroid', 'levothyroxine'], purpose: 'Thyroid condition' },
-    { keywords: ['depression', 'anxiety', 'ssri', 'sertraline', 'fluoxetine'], purpose: 'Mental health' },
-    { keywords: ['blood thin', 'warfarin', 'coumadin', 'anticoagulant'], purpose: 'Blood thinner' },
-    { keywords: ['heart', 'cardiac', 'metoprolol', 'lisinopril', 'amlodipine'], purpose: 'Heart / blood pressure' },
-    { keywords: ['asthma', 'inhaler', 'albuterol', 'bronchodilator'], purpose: 'Asthma / breathing' },
+    { keywords: ['lisinopril', 'losartan', 'amlodipine', 'valsartan', 'enalapril', 'ramipril', 'benazepril', 'hydrochlorothiazide', 'hctz', 'blood pressure', 'hypertension', 'htn'], purpose: 'High blood pressure' },
+    { keywords: ['metformin', 'glipizide', 'glyburide', 'januvia', 'sitagliptin', 'pioglitazone', 'insulin', 'diabetes', 'blood sugar', 'glucose', 'a1c'], purpose: 'Type 2 diabetes' },
+    { keywords: ['atorvastatin', 'simvastatin', 'rosuvastatin', 'pravastatin', 'lovastatin', 'lipitor', 'crestor', 'cholesterol', 'lipid', 'statin'], purpose: 'High cholesterol' },
+    { keywords: ['amoxicillin', 'azithromycin', 'ciprofloxacin', 'doxycycline', 'cephalexin', 'levofloxacin', 'augmentin', 'clindamycin', 'infection', 'antibiotic'], purpose: 'Bacterial infection' },
+    { keywords: ['ibuprofen', 'naproxen', 'acetaminophen', 'tramadol', 'gabapentin', 'pregabalin', 'meloxicam', 'celecoxib', 'pain', 'analgesic'], purpose: 'Pain management' },
+    { keywords: ['omeprazole', 'pantoprazole', 'lansoprazole', 'esomeprazole', 'famotidine', 'ranitidine', 'acid reflux', 'heartburn', 'gerd'], purpose: 'Acid reflux / GERD' },
+    { keywords: ['levothyroxine', 'synthroid', 'thyroid', 'liothyronine'], purpose: 'Thyroid condition' },
+    { keywords: ['sertraline', 'fluoxetine', 'escitalopram', 'citalopram', 'paroxetine', 'venlafaxine', 'duloxetine', 'bupropion', 'trazodone', 'lexapro', 'zoloft', 'prozac', 'depression', 'anxiety', 'ssri'], purpose: 'Depression / anxiety' },
+    { keywords: ['warfarin', 'coumadin', 'eliquis', 'apixaban', 'xarelto', 'rivaroxaban', 'blood thin', 'anticoagulant'], purpose: 'Blood thinner' },
+    { keywords: ['metoprolol', 'atenolol', 'carvedilol', 'propranolol', 'bisoprolol', 'beta blocker', 'heart rate'], purpose: 'Heart condition' },
+    { keywords: ['albuterol', 'fluticasone', 'budesonide', 'montelukast', 'singulair', 'advair', 'symbicort', 'asthma', 'inhaler', 'copd', 'bronchodilator'], purpose: 'Asthma / COPD' },
+    { keywords: ['prednisone', 'prednisolone', 'methylprednisolone', 'dexamethasone', 'steroid', 'corticosteroid', 'inflammation'], purpose: 'Anti-inflammatory' },
+    { keywords: ['alprazolam', 'lorazepam', 'diazepam', 'clonazepam', 'xanax', 'ativan', 'benzodiazepine'], purpose: 'Anxiety' },
+    { keywords: ['zolpidem', 'ambien', 'eszopiclone', 'lunesta', 'sleep', 'insomnia'], purpose: 'Sleep aid' },
   ];
 
   for (const { keywords, purpose: p } of purposeMap) {
-    if (keywords.some(kw => fullLower.includes(kw))) {
+    if (keywords.some(kw => drugLookup.includes(kw))) {
       purpose = p;
       break;
     }
   }
 
-  // If no name found from pattern, take the first substantial line
-  if (!name && lines.length > 0) {
-    name = lines.find(l => l.length > 3 && l.length < 40 && !/^\d+$/.test(l) && !/pharmacy|rx|date|doctor|dr\./i.test(l)) || '';
+  // ── Step 9: Final cleanup — if no name found, pick best candidate ──────
+  if (!name) {
+    const candidate = cleanLines.find(l =>
+      l.length > 3 && l.length < 35 &&
+      !/^\d/.test(l) &&
+      !/\b(take|use|apply|qty|refill|doctor|dr|md|npi)\b/i.test(l)
+    );
+    if (candidate) name = candidate;
+  }
+
+  // Capitalize drug name properly
+  if (name) {
+    name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    // Capitalize known drug suffixes
+    name = name.replace(/\b(hcl|hct|er|cr|sr|xl|xr)\b/gi, m => m.toUpperCase());
   }
 
   return {
@@ -825,11 +955,12 @@ function parsePrescriptionText(text) {
     quantity,
     purpose,
     directions: directions || '',
-    pillsRemaining: 0,
-    pillsTotal: 0,
-    daysSupply: 30,
+    pillsRemaining: pillsTotal || 0,
+    pillsTotal: pillsTotal || 0,
+    daysSupply,
     refillsRemaining: refills,
-    frequency: [],
+    frequency,
+    _scheduleDays: foundDays.length > 0 ? foundDays : null,
   };
 }
 
