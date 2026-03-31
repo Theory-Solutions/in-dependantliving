@@ -35,6 +35,7 @@ export function AppProvider({ children }) {
   const [profilePhotos, setProfilePhotos] = useState({});
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [connectedPeople, setConnectedPeople] = useState([]);
+  const [connectedSeniors, setConnectedSeniors] = useState([]);
   const [settings, setSettings] = useState({
     alertThreshold: 4,
     showCheckin: true,
@@ -98,9 +99,77 @@ export function AppProvider({ children }) {
       unsubscribers.current.push(unsubCal);
 
     } else if (role === 'family') {
-      // Subscribe to calendar
+      // Subscribe to own calendar
       const unsubCal = subscribeCalendar(uid, setCalendarEvents);
       unsubscribers.current.push(unsubCal);
+
+      // Fetch pairedWith list and subscribe to each senior's data
+      (async () => {
+        try {
+          const { doc, getDoc } = require('firebase/firestore');
+          const { db } = require('../config/firebase');
+          const userDoc = await getDoc(doc(db, 'users', uid));
+          if (userDoc.exists()) {
+            const paired = userDoc.data().pairedWith || [];
+            const seniorsMap = {};
+
+            for (const seniorUid of paired) {
+              // Fetch senior's profile
+              const seniorDoc = await getDoc(doc(db, 'users', seniorUid));
+              if (seniorDoc.exists()) {
+                const profile = seniorDoc.data();
+                seniorsMap[seniorUid] = {
+                  id: seniorUid,
+                  name: profile.displayName || profile.name || 'Unknown',
+                  relation: profile.relation || 'Senior',
+                  avatar: profile.avatar || '🧓',
+                  pairingCode: profile.pairingCode || '------',
+                  lastCheckin: profile.lastCheckin || 0,
+                  lastMovement: profile.lastMovement || 0,
+                  stepCount: profile.stepCount || 0,
+                  meds: [],
+                };
+              }
+
+              // Subscribe to medications
+              const unsubSeniorMeds = subscribeMedications(seniorUid, (meds) => {
+                setConnectedSeniors(prev => {
+                  const updated = prev.map(s =>
+                    s.id === seniorUid ? { ...s, meds: Array.isArray(meds) ? meds : [] } : s
+                  );
+                  return updated;
+                });
+              });
+              unsubscribers.current.push(unsubSeniorMeds);
+
+              // Subscribe to check-ins
+              const unsubSeniorCheckin = subscribeCheckin(seniorUid, (ts) => {
+                setConnectedSeniors(prev =>
+                  prev.map(s => s.id === seniorUid ? { ...s, lastCheckin: ts || 0 } : s)
+                );
+              });
+              unsubscribers.current.push(unsubSeniorCheckin);
+
+              // Subscribe to activity
+              const unsubSeniorActivity = subscribeActivity(seniorUid, (data) => {
+                setConnectedSeniors(prev =>
+                  prev.map(s => s.id === seniorUid ? {
+                    ...s,
+                    stepCount: data?.stepCount || s.stepCount,
+                    lastMovement: data?.lastMovement || s.lastMovement,
+                  } : s)
+                );
+              });
+              unsubscribers.current.push(unsubSeniorActivity);
+            }
+
+            // Set initial seniors list
+            setConnectedSeniors(Object.values(seniorsMap));
+          }
+        } catch (e) {
+          console.log('[IL] Family sync error:', e.message);
+        }
+      })();
     }
 
     return () => {
@@ -149,6 +218,27 @@ export function AppProvider({ children }) {
       await fbDeleteMed(firebaseUser.uid, id);
     } else {
       setMedications(prev => Array.isArray(prev) ? prev.filter(m => m.id !== id) : prev);
+    }
+  };
+
+  const updateMedication = async (id, updatedData) => {
+    if (firebaseUser) {
+      try {
+        const { doc, updateDoc } = require('firebase/firestore');
+        const { db } = require('../config/firebase');
+        const medRef = doc(db, 'users', firebaseUser.uid, 'medications', id);
+        await updateDoc(medRef, updatedData);
+      } catch (e) {
+        console.log('[IL] updateMedication error:', e.message);
+        // Optimistic local fallback
+        setMedications(prev =>
+          Array.isArray(prev) ? prev.map(m => m.id === id ? { ...m, ...updatedData } : m) : prev
+        );
+      }
+    } else {
+      setMedications(prev =>
+        Array.isArray(prev) ? prev.map(m => m.id === id ? { ...m, ...updatedData } : m) : prev
+      );
     }
   };
 
@@ -253,6 +343,7 @@ export function AppProvider({ children }) {
         medications: medsArray,
         addMedication,
         deleteMedication,
+        updateMedication,
         markMedicationTaken,
         // Check-in
         lastCheckin,
@@ -277,6 +368,7 @@ export function AppProvider({ children }) {
         deleteCalendarEvent,
         // Connections
         connectedPeople,
+        connectedSeniors,
         subscribeToSenior,
       }}
     >

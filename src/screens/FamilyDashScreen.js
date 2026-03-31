@@ -40,9 +40,10 @@ function timeAgo(ts) {
 }
 
 function getStatus(p) {
-  const hCheckin = (Date.now() - p.lastCheckin) / 3600000;
-  const hMove = (Date.now() - p.lastMovement) / 3600000;
-  const pending = p.meds.filter(m => !m.taken).length;
+  if (!p) return 'ok';
+  const hCheckin = (Date.now() - (p.lastCheckin || 0)) / 3600000;
+  const hMove = (Date.now() - (p.lastMovement || 0)) / 3600000;
+  const pending = (p.meds || []).filter(m => !m.taken).length;
   if (hCheckin > 6 || hMove > 4) return 'alert';
   if (hCheckin > 3 || pending > 0) return 'warning';
   return 'ok';
@@ -55,15 +56,17 @@ const STATUS = {
 };
 
 export default function FamilyDashScreen({ navigation }) {
-  const { settings, updateSettings, setProfilePhoto, getProfilePhoto, sendMedReminder } = useApp();
-  const [selectedId, setSelectedId] = useState(DEMO_PEOPLE[0].id);
+  const { settings, updateSettings, setProfilePhoto, getProfilePhoto, sendMedReminder, connectedSeniors } = useApp();
+  const people = connectedSeniors && connectedSeniors.length > 0 ? connectedSeniors : DEMO_PEOPLE;
+  const [selectedId, setSelectedId] = useState(null);
   const [notif, setNotif] = useState(settings.notifications.missedMeds);
   const [selectedMed, setSelectedMed] = useState(null);
 
-  const person = DEMO_PEOPLE.find(p => p.id === selectedId) || DEMO_PEOPLE[0];
+  const effectiveSelectedId = selectedId || people[0]?.id;
+  const person = (people.find(p => p.id === effectiveSelectedId) || people[0]) ?? DEMO_PEOPLE[0];
   const status = getStatus(person);
   const cfg = STATUS[status];
-  const takenCount = person.meds.filter(m => m.taken).length;
+  const takenCount = (person.meds || []).filter(m => m.taken).length;
   const [sendingReminder, setSendingReminder] = useState(null); // medName being sent
   const [reminderSent, setReminderSent] = useState({}); // { medName: true }
 
@@ -151,15 +154,15 @@ export default function FamilyDashScreen({ navigation }) {
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         >
           <Text style={styles.headerTitle}>Dashboard</Text>
-          <Text style={styles.headerSub}>{DEMO_PEOPLE.length} people connected</Text>
+          <Text style={styles.headerSub}>{people.length} people connected</Text>
         </LinearGradient>
 
         <View style={styles.body}>
           {/* Person selector tabs */}
           <View style={styles.personTabs}>
-            {DEMO_PEOPLE.map(p => {
+            {people.map(p => {
               const s = getStatus(p);
-              const active = p.id === selectedId;
+              const active = p.id === effectiveSelectedId;
               return (
                 <TouchableOpacity
                   key={p.id}
@@ -217,13 +220,13 @@ export default function FamilyDashScreen({ navigation }) {
 
             {/* Stats row */}
             <View style={styles.statsRow}>
-              <StatItem icon="🕐" value={timeAgo(person.lastCheckin)} label="Check-In" />
+              <StatItem icon="🕐" value={timeAgo(person.lastCheckin || 0)} label="Check-In" />
               <View style={styles.statDivider} />
-              <StatItem icon="💊" value={`${takenCount}/${person.meds.length}`} label="Meds" />
+              <StatItem icon="💊" value={`${takenCount}/${(person.meds || []).length}`} label="Meds" />
               <View style={styles.statDivider} />
-              <StatItem icon="🏃" value={timeAgo(person.lastMovement)} label="Active" />
+              <StatItem icon="🏃" value={timeAgo(person.lastMovement || 0)} label="Active" />
               <View style={styles.statDivider} />
-              <StatItem icon="👟" value={person.stepCount.toLocaleString()} label="Steps" />
+              <StatItem icon="👟" value={(person.stepCount || 0).toLocaleString()} label="Steps" />
             </View>
           </View>
 
@@ -246,13 +249,13 @@ export default function FamilyDashScreen({ navigation }) {
             <View style={styles.sectionHeaderRow}>
               <View>
                 <Text style={styles.sectionTitle}>Today's Medications</Text>
-                <Text style={styles.sectionSub}>{person.name} · {takenCount} of {person.meds.length} taken</Text>
+                <Text style={styles.sectionSub}>{person.name} · {takenCount} of {(person.meds || []).length} taken</Text>
               </View>
-              {takenCount < person.meds.length && (
+              {takenCount < (person.meds || []).length && (
                 <TouchableOpacity
                   style={styles.remindAllBtn}
                   onPress={() => {
-                    const pending = person.meds.filter(m => !m.taken);
+                    const pending = (person.meds || []).filter(m => !m.taken);
                     Alert.alert(
                       'Remind All',
                       `Send a reminder to ${person.name} for all ${pending.length} missed medication(s)?`,
@@ -268,7 +271,7 @@ export default function FamilyDashScreen({ navigation }) {
                 </TouchableOpacity>
               )}
             </View>
-            {person.meds.map((med, i) => (
+            {(person.meds || []).map((med, i) => (
               <View key={i}>
                 <TouchableOpacity
                   style={[styles.medRow, med.taken && styles.medRowDone]}

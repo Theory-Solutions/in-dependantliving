@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 import { MOCK_PAIRING_CODE } from '../constants/mockData';
@@ -21,7 +22,7 @@ const THRESHOLDS = [
   { value: 8, label: '8 hours' },
 ];
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }) {
   const { role, setRole, settings, updateSettings } = useApp();
   const [threshold, setThreshold] = useState(settings.alertThreshold);
   const [notifs, setNotifs] = useState({ ...settings.notifications });
@@ -59,9 +60,17 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-
+      {/* Back / header bar */}
+      <View style={styles.settingsHeader}>
+        <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+          <Text style={styles.backBtnText}>Home</Text>
+        </TouchableOpacity>
         <Text style={styles.screenTitle}>Settings</Text>
+        <View style={{ width: 70 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
         {/* Check-in toggle */}
         {role === 'senior' && (
@@ -248,11 +257,29 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   container: { padding: 20, paddingBottom: 48 },
 
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    width: 70,
+  },
+  backBtnText: { fontSize: 16, fontWeight: '600', color: COLORS.primary },
+
   screenTitle: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    marginBottom: 24,
   },
 
   card: {

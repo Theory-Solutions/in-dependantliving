@@ -17,9 +17,13 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 const FREQUENCIES = ['morning', 'afternoon', 'evening', 'night'];
@@ -59,9 +63,11 @@ function dosageLabel(med) {
 }
 
 export default function MedicationScreen({ navigation }) {
-  const { medications, addMedication, deleteMedication, markMedicationTaken } = useApp();
+  const { medications, addMedication, deleteMedication, markMedicationTaken, updateMedication } = useApp();
   const [form, setForm] = useState({ name: '', dosage: '', quantity: '1', frequency: [] });
   const [scanned, setScanned] = useState(false);
+  const [editingMed, setEditingMed] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', dosage: '', quantity: '1', frequency: [], purpose: '', directions: '' });
 
   const slot = getCurrentSlot();
   const currentMeds = medications.filter(m => m.frequency.includes(slot));
@@ -101,6 +107,68 @@ export default function MedicationScreen({ navigation }) {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => deleteMedication(id) },
     ]);
+  };
+
+  const openEditModal = (med) => {
+    setEditForm({
+      name: med.name || '',
+      dosage: med.dosage || '',
+      quantity: String(med.quantity ?? 1),
+      frequency: med.frequency ? [...med.frequency] : [],
+      purpose: med.purpose || '',
+      directions: med.directions || '',
+    });
+    setEditingMed(med);
+  };
+
+  const handleEditSave = () => {
+    if (!editForm.name.trim()) {
+      Alert.alert('Missing Info', 'Please enter a medication name.');
+      return;
+    }
+    if (editForm.frequency.length === 0) {
+      Alert.alert('Missing Info', 'Please select when to take it.');
+      return;
+    }
+    const updated = {
+      ...editingMed,
+      name: editForm.name.trim(),
+      dosage: editForm.dosage.trim(),
+      quantity: parseInt(editForm.quantity, 10) || 1,
+      frequency: editForm.frequency,
+      purpose: editForm.purpose.trim(),
+      directions: editForm.directions.trim(),
+    };
+    if (updateMedication) {
+      updateMedication(editingMed.id, updated);
+    } else {
+      // Offline fallback — not expected but just in case
+      Alert.alert('Not supported', 'updateMedication not available');
+    }
+    setEditingMed(null);
+  };
+
+  const handleEditDelete = () => {
+    Alert.alert('Remove Medication', `Remove ${editingMed.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          deleteMedication(editingMed.id);
+          setEditingMed(null);
+        },
+      },
+    ]);
+  };
+
+  const toggleEditFrequency = (s) => {
+    setEditForm(prev => {
+      const freq = prev.frequency.includes(s)
+        ? prev.frequency.filter(f => f !== s)
+        : [...prev.frequency, s];
+      return { ...prev, frequency: freq };
+    });
   };
 
   // Total dose events today (each med × each frequency slot it appears in)
@@ -166,19 +234,17 @@ export default function MedicationScreen({ navigation }) {
               {slotMeds.map(med => {
                 const taken = !!med.taken?.[s];
                 return (
-                  <TouchableOpacity
+                  <View
                     key={`${med.id}-${s}`}
                     style={[styles.medCard, taken && styles.medCardDone]}
-                    onPress={() => markMedicationTaken(med.id, s)}
-                    activeOpacity={0.8}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: taken }}
                   >
-                    {/* Checkbox */}
+                    {/* Checkbox — marks taken */}
                     <TouchableOpacity
                       style={[styles.checkbox, taken ? styles.checkboxDone : styles.checkboxPending]}
                       onPress={() => markMedicationTaken(med.id, s)}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: taken }}
                     >
                       {taken
                         ? <Text style={styles.checkmarkDone}>✓</Text>
@@ -186,17 +252,22 @@ export default function MedicationScreen({ navigation }) {
                       }
                     </TouchableOpacity>
 
-                    <View style={styles.medInfo}>
+                    {/* Med info — tap to edit */}
+                    <TouchableOpacity
+                      style={styles.medInfo}
+                      onPress={() => openEditModal(med)}
+                      activeOpacity={0.7}
+                    >
                       <Text style={[styles.medName, taken && styles.medNameDone]}>{med.name}</Text>
                       <Text style={styles.medDose}>{dosageLabel(med)}</Text>
-                    </View>
+                    </TouchableOpacity>
 
                     {taken ? (
                       <View style={styles.takenPill}><Text style={styles.takenPillText}>Taken ✓</Text></View>
                     ) : (
                       <View style={styles.pendingPill}><Text style={styles.pendingPillText}>Confirm</Text></View>
                     )}
-                  </TouchableOpacity>
+                  </View>
                 );
               })}
             </View>
@@ -328,6 +399,120 @@ export default function MedicationScreen({ navigation }) {
           </View>
         )}
       </ScrollView>
+
+      {/* ── Edit Medication Modal ── */}
+      <Modal
+        visible={!!editingMed}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setEditingMed(null)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+          {/* Header */}
+          <View style={styles.editModalHeader}>
+            <TouchableOpacity onPress={() => setEditingMed(null)} style={styles.editModalCancel}>
+              <Text style={styles.editModalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.editModalTitle}>Edit Medication</Text>
+            <TouchableOpacity onPress={handleEditSave} style={styles.editModalSave}>
+              <Text style={styles.editModalSaveText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1 }}
+          >
+            <ScrollView
+              contentContainerStyle={styles.editModalScroll}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.label}>Medication Name</Text>
+              <TextInput
+                style={styles.input}
+                value={editForm.name}
+                onChangeText={t => setEditForm(prev => ({ ...prev, name: t }))}
+                placeholder="e.g. Lisinopril"
+                placeholderTextColor={COLORS.textMuted}
+                autoCapitalize="words"
+              />
+
+              <Text style={styles.label}>Dosage</Text>
+              <TextInput
+                style={styles.input}
+                value={editForm.dosage}
+                onChangeText={t => setEditForm(prev => ({ ...prev, dosage: t }))}
+                placeholder="e.g. 10mg"
+                placeholderTextColor={COLORS.textMuted}
+              />
+
+              <Text style={styles.label}>Quantity per dose</Text>
+              <TextInput
+                style={styles.input}
+                value={editForm.quantity}
+                onChangeText={t => setEditForm(prev => ({ ...prev, quantity: t }))}
+                placeholder="e.g. 1"
+                placeholderTextColor={COLORS.textMuted}
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.label}>Purpose (optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={editForm.purpose}
+                onChangeText={t => setEditForm(prev => ({ ...prev, purpose: t }))}
+                placeholder="e.g. Blood pressure"
+                placeholderTextColor={COLORS.textMuted}
+                autoCapitalize="sentences"
+              />
+
+              <Text style={styles.label}>Directions (optional)</Text>
+              <TextInput
+                style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                value={editForm.directions}
+                onChangeText={t => setEditForm(prev => ({ ...prev, directions: t }))}
+                placeholder="e.g. Take with food"
+                placeholderTextColor={COLORS.textMuted}
+                multiline
+                numberOfLines={3}
+                autoCapitalize="sentences"
+              />
+
+              <Text style={styles.label}>When do you take it?</Text>
+              <View style={styles.frequencyGrid}>
+                {FREQUENCIES.map(s => {
+                  const active = editForm.frequency.includes(s);
+                  return (
+                    <TouchableOpacity
+                      key={s}
+                      style={[styles.freqBtn, active && styles.freqBtnActive]}
+                      onPress={() => toggleEditFrequency(s)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.freqBtnIcon}>{FREQ_ICONS[s]}</Text>
+                      <Text style={[styles.freqBtnText, active && styles.freqBtnTextActive]}>
+                        {FREQUENCY_LABELS[s]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Save button */}
+              <TouchableOpacity style={styles.addBtn} onPress={handleEditSave} activeOpacity={0.85}>
+                <Text style={styles.addBtnText}>💾  Save Changes</Text>
+              </TouchableOpacity>
+
+              {/* Delete button */}
+              <TouchableOpacity style={styles.editDeleteBtn} onPress={handleEditDelete} activeOpacity={0.85}>
+                <Ionicons name="trash" size={20} color={COLORS.alert} />
+                <Text style={styles.editDeleteBtnText}>Remove Medication</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -770,4 +955,36 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: COLORS.border,
     borderStyle: 'dashed', margin: 16,
   },
+
+  // Edit modal
+  editModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  editModalCancel: { paddingVertical: 4 },
+  editModalCancelText: { fontSize: 16, color: COLORS.textMuted, fontWeight: '600' },
+  editModalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
+  editModalSave: { paddingVertical: 4 },
+  editModalSaveText: { fontSize: 16, color: COLORS.primary, fontWeight: '800' },
+  editModalScroll: { padding: 20, paddingBottom: 48 },
+
+  editDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 16,
+    paddingVertical: 18,
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: COLORS.alert,
+    minHeight: 58,
+  },
+  editDeleteBtnText: { fontSize: 18, fontWeight: '700', color: COLORS.alert },
 });

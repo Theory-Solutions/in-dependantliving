@@ -42,24 +42,7 @@ function dateLabel(key) {
   return key;
 }
 
-const MOCK_EVENTS = [
-  { id: '1', title: 'Morning Medications', date: 'today', time: '8:00 AM', category: 'meds', isPrivate: false, recurring: 'daily', color: '#1A6FA3' },
-  { id: '2', title: 'Water Aerobics', date: 'today', time: '10:00 AM', category: 'activity', isPrivate: false, location: 'Tucson YMCA', color: '#059669' },
-  { id: '3', title: 'Girls Bridge Club', date: 'today', time: '1:00 PM', category: 'social', isPrivate: true, location: "49er's Restaurant", color: '#DB2777' },
-  { id: '4', title: 'Evening Medications', date: 'today', time: '6:00 PM', category: 'meds', isPrivate: false, recurring: 'daily', color: '#1A6FA3' },
-  { id: '5', title: 'Dr. Smith - Annual Checkup', date: 'tomorrow', time: '2:30 PM', category: 'appointment', isPrivate: false, location: 'Tucson Medical Center', color: '#7C3AED' },
-  { id: '6', title: 'Hair Appointment', date: 'tomorrow', time: '11:00 AM', category: 'hair', isPrivate: true, location: 'Great Clips', color: '#F59E0B' },
-  { id: '7', title: 'Call with David', date: 'tomorrow', time: '4:00 PM', category: 'family', isPrivate: false, color: '#0D9488' },
-  { id: '8', title: 'Lunch with Carol', date: 'next_week', time: '12:00 PM', category: 'social', isPrivate: true, location: 'La Paloma Cafe', color: '#DB2777' },
-  { id: '9', title: 'Dentist Checkup', date: 'next_week', time: '9:30 AM', category: 'appointment', isPrivate: false, location: 'Tucson Dental', color: '#7C3AED', needsRide: true },
-  { id: '10', title: "Timmy's Birthday", date: 'next_week', time: '12:00 PM', category: 'social', isPrivate: false, color: '#DB2777', reminderType: 'Birthday', reminder: '1 week', notes: 'Call him!' },
-  { id: '11', title: 'Car Registration Due', date: 'next_week', time: '12:00 PM', category: 'errand', isPrivate: false, color: '#B45309', reminderType: 'Renewal/Expiry', reminder: '1 week' },
-  { id: '12', title: 'Pick Up Dry Cleaning', date: 'today', time: '3:00 PM', category: 'errand', isPrivate: false, color: '#B45309', reminderType: 'Errand' },
-  { id: '13', title: 'Annual Eye Exam', date: 'next_month', time: '10:00 AM', category: 'appointment', isPrivate: false, color: '#7C3AED', location: 'Tucson Eye Care', reminder: '1 day' },
-  { id: '14', title: 'Passport Renewal Deadline', date: 'three_months', time: '12:00 PM', category: 'errand', isPrivate: false, color: '#B45309', reminderType: 'Renewal/Expiry', reminder: '1 week', notes: 'Expires — must renew before trip' },
-  { id: '15', title: 'Family Reunion — Phoenix', date: 'three_months', time: '10:00 AM', category: 'family', isPrivate: false, color: '#0D9488', location: 'Phoenix, AZ', reminder: '3 days' },
-  { id: '16', title: 'Alaska Cruise Departure', date: 'six_months', time: '8:00 AM', category: 'social', isPrivate: false, color: '#DB2777', location: 'Seattle, WA — Pier 91', reminder: '1 week', notes: 'Book travel insurance!' },
-];
+const MOCK_EVENTS = [];
 
 // ─── Category definitions ────────────────────────────────────────────────────
 
