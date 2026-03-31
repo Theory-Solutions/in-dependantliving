@@ -24,14 +24,12 @@ import {
   deleteCalendarEvent as fbDeleteEvent,
   subscribeSeniorStatus,
 } from '../services/syncService';
-import { MOCK_MEDICATIONS } from '../constants/mockData';
-
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(undefined); // undefined = loading
   const [role, setRoleState] = useState(null);
-  const [medications, setMedications] = useState(MOCK_MEDICATIONS);
+  const [medications, setMedications] = useState([]);
   const [lastCheckin, setLastCheckin] = useState(null);
   const [activityData, setActivityData] = useState(null);
   const [profilePhotos, setProfilePhotos] = useState({});
@@ -206,7 +204,7 @@ export function AppProvider({ children }) {
   const getProfilePhoto = (personId) => profilePhotos[personId] || null;
 
   // ── Notification stubs (real impl needs dev build) ────────────────────────
-  const sendMedReminder = async (medName, seniorName = 'Margaret') => {
+  const sendMedReminder = async (medName, seniorName = 'your loved one') => {
     console.log(`[IL] Sending med reminder: ${seniorName} → ${medName}`);
     return { success: true };
   };

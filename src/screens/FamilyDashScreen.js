@@ -16,7 +16,20 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
-import { MOCK_PEOPLE } from '../constants/mockData';
+// Mock people used as demo data when no one is connected yet
+const DEMO_PEOPLE = [
+  {
+    id: 'demo-1',
+    name: 'Demo User',
+    relation: 'Example',
+    avatar: '👤',
+    lastCheckin: Date.now() - 2 * 60 * 60 * 1000,
+    lastMovement: Date.now() - 45 * 60 * 1000,
+    stepCount: 0,
+    pairingCode: '------',
+    meds: [],
+  },
+];
 import MedDetailModal from '../components/MedDetailModal';
 
 function timeAgo(ts) {
@@ -43,11 +56,11 @@ const STATUS = {
 
 export default function FamilyDashScreen({ navigation }) {
   const { settings, updateSettings, setProfilePhoto, getProfilePhoto, sendMedReminder } = useApp();
-  const [selectedId, setSelectedId] = useState(MOCK_PEOPLE[0].id);
+  const [selectedId, setSelectedId] = useState(DEMO_PEOPLE[0].id);
   const [notif, setNotif] = useState(settings.notifications.missedMeds);
   const [selectedMed, setSelectedMed] = useState(null);
 
-  const person = MOCK_PEOPLE.find(p => p.id === selectedId) || MOCK_PEOPLE[0];
+  const person = DEMO_PEOPLE.find(p => p.id === selectedId) || DEMO_PEOPLE[0];
   const status = getStatus(person);
   const cfg = STATUS[status];
   const takenCount = person.meds.filter(m => m.taken).length;
@@ -138,13 +151,13 @@ export default function FamilyDashScreen({ navigation }) {
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         >
           <Text style={styles.headerTitle}>Dashboard</Text>
-          <Text style={styles.headerSub}>{MOCK_PEOPLE.length} people connected</Text>
+          <Text style={styles.headerSub}>{DEMO_PEOPLE.length} people connected</Text>
         </LinearGradient>
 
         <View style={styles.body}>
           {/* Person selector tabs */}
           <View style={styles.personTabs}>
-            {MOCK_PEOPLE.map(p => {
+            {DEMO_PEOPLE.map(p => {
               const s = getStatus(p);
               const active = p.id === selectedId;
               return (

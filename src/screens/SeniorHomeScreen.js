@@ -15,8 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
-import { MOCK_SENIOR_NAME } from '../constants/mockData';
-// Use Firebase display name if logged in, fall back to mock
+// User name comes from Firebase auth or defaults to 'Friend'
 
 const MOCK_CONTACTS = [
   { id: '1', name: 'David',    relation: 'Son',      avatar: '👨',    phone: '+15205551234' },
@@ -55,7 +54,7 @@ function getGreeting(name) {
 }
 
 export default function SeniorHomeScreen({ navigation }) {
-  const { medications, settings, doCheckin } = useApp();
+  const { medications, settings, doCheckin, firebaseUser } = useApp();
   const [now, setNow] = useState(new Date());
   const [checkinDone, setCheckinDone] = useState(false);
   // SOS button is now in the header — no animation needed
@@ -97,7 +96,7 @@ export default function SeniorHomeScreen({ navigation }) {
   const takenDoses = allDoseEvents.filter(d => d.taken).length;
 
   const stepsPct = Math.min((MOCK_STEPS / STEP_GOAL) * 100, 100);
-  const firstName = MOCK_SENIOR_NAME.split(' ')[0];
+  const firstName = firebaseUser?.displayName?.split(' ')[0] || 'Friend';
 
   // Navigate to a tab by name (works because this screen is inside HomeStack inside the tab navigator)
   const goToTab = (tabName) => {
