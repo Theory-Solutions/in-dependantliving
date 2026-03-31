@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 import { MOCK_SENIOR_NAME } from '../constants/mockData';
+// Use Firebase display name if logged in, fall back to mock
 
 const MOCK_CONTACTS = [
   { id: '1', name: 'David',    relation: 'Son',      avatar: '👨',    phone: '+15205551234' },

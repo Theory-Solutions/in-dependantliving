@@ -54,9 +54,25 @@ export function AppProvider({ children }) {
     const unsub = onAuthChange(async (user) => {
       setFirebaseUser(user);
       if (user) {
-        // Load role from AsyncStorage as fallback while Firestore loads
+        // Try AsyncStorage first (fast)
         const storedRole = await AsyncStorage.getItem('userRole');
-        if (storedRole) setRoleState(storedRole);
+        if (storedRole) {
+          setRoleState(storedRole);
+        } else {
+          // Fallback: fetch role from Firestore user profile
+          try {
+            const { doc, getDoc } = require('firebase/firestore');
+            const { db } = require('../config/firebase');
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            if (userDoc.exists() && userDoc.data().role) {
+              const firestoreRole = userDoc.data().role;
+              setRoleState(firestoreRole);
+              await AsyncStorage.setItem('userRole', firestoreRole);
+            }
+          } catch (e) {
+            console.log('[IL] Could not fetch role from Firestore:', e.message);
+          }
+        }
       } else {
         setFirebaseUser(null);
       }
