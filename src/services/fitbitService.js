@@ -4,13 +4,13 @@
  * PROPRIETARY AND CONFIDENTIAL
  */
 
-import * as Linking from 'expo-linking';
+import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Fitbit OAuth configuration
 // Client ID and Secret to be provided by user at dev.fitbit.com
 const FITBIT_CLIENT_ID = ''; // Set after registration
-const FITBIT_REDIRECT_URI = Linking.createURL('fitbit-callback');
+const FITBIT_REDIRECT_URI = 'https://in-dependentliving.com/fitbit/callback';
 const FITBIT_AUTH_URL = 'https://www.fitbit.com/oauth2/authorize';
 const FITBIT_TOKEN_URL = 'https://api.fitbit.com/oauth2/token';
 

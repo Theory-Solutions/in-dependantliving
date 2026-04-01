@@ -45,16 +45,15 @@ function dateLabel(key) {
 }
 
 // Demo events — shown until user adds real ones
-// These populate from the user's Firebase calendar once they add events
-const today = new Date();
-const nextWeekDemo = new Date(today); nextWeekDemo.setDate(today.getDate() + 5);
-const nextWeekDemoStr = nextWeekDemo.toISOString().split('T')[0];
+const _demoToday = new Date();
+const _nextWeekDemo = new Date(_demoToday); _nextWeekDemo.setDate(_demoToday.getDate() + 5);
+const _nextWeekDemoStr = _nextWeekDemo.toISOString().split('T')[0];
 
 const MOCK_EVENTS = [
   {
     id: 'demo-1',
     title: 'Dentist Appointment',
-    date: nextWeekDemoStr,
+    date: _nextWeekDemoStr,
     time: '10:00 AM',
     category: 'appointment',
     isPrivate: false,
