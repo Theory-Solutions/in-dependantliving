@@ -35,11 +35,16 @@ function SeniorPairingView({ onSkip }) {
   const [generating, setGenerating] = useState(false);
 
   const loadCode = async () => {
-    if (!firebaseUser) return;
+    if (!firebaseUser?.uid) {
+      // Wait a moment for auth to resolve then retry
+      setTimeout(loadCode, 1000);
+      return;
+    }
     try {
       const newCode = await createPairingCode(firebaseUser.uid);
       setCode(newCode);
     } catch (err) {
+      console.log('[IL] Pairing code error:', err.message);
       Alert.alert('Error', err.message || 'Could not generate pairing code.');
     } finally {
       setLoading(false);
@@ -48,7 +53,7 @@ function SeniorPairingView({ onSkip }) {
 
   useEffect(() => {
     loadCode();
-  }, []);
+  }, [firebaseUser?.uid]); // re-run when uid becomes available
 
   const handleGenerateNew = async () => {
     setGenerating(true);
