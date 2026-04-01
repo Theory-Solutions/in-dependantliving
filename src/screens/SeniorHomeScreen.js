@@ -24,7 +24,7 @@ import { getTodaySteps, isStepCountingAvailable } from '../services/healthServic
 
 const STEP_GOAL = 10000;
 
-const MOCK_SCHEDULE = [];
+// No mock schedule — show empty state when no real events
 
 const SCHEDULE_COLORS = {
   meds:        '#1A6FA3',
@@ -187,14 +187,15 @@ export default function SeniorHomeScreen({ navigation }) {
   const stepsPct = Math.min((realSteps / STEP_GOAL) * 100, 100);
   const firstName = firebaseUser?.displayName?.split(' ')[0] || 'Friend';
 
-  // Get today's calendar events from Firebase (or empty)
+  // Get today's calendar events from Firebase — recomputes whenever calendarEvents changes
   const todayStr = now.toISOString().split('T')[0];
   const todayEvents = (calendarEvents || [])
     .filter(e => e.date === todayStr)
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
     .slice(0, 4); // show max 4 on home screen
 
-  const scheduleToShow = todayEvents.length > 0 ? todayEvents : MOCK_SCHEDULE;
+  // No mock fallback — show empty state when no real events
+  const scheduleToShow = todayEvents;
 
   // Navigate to a tab by name (works because this screen is inside HomeStack inside the tab navigator)
   const goToTab = (tabName) => {

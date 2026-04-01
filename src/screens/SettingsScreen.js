@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
-import { MOCK_PAIRING_CODE } from '../constants/mockData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { createPairingCode } from '../services/pairingService';
 
 const THRESHOLDS = [
   { value: 2, label: '2 hours' },
@@ -23,11 +25,24 @@ const THRESHOLDS = [
 ];
 
 export default function SettingsScreen({ navigation }) {
-  const { role, setRole, settings, updateSettings } = useApp();
+  const { role, setRole, settings, updateSettings, firebaseUser, connectedSeniors } = useApp();
   const [threshold, setThreshold] = useState(settings.alertThreshold);
   const [notifs, setNotifs] = useState({ ...settings.notifications });
   const [showCheckin, setShowCheckin] = useState(settings.showCheckin !== false);
   const [locationSharing, setLocationSharing] = useState(settings.locationSharing !== false);
+  const [userPairingCode, setUserPairingCode] = useState(null);
+  const [generatingCode, setGeneratingCode] = useState(false);
+
+  // Subscribe to real pairing code from Firebase
+  useEffect(() => {
+    if (!firebaseUser?.uid) return;
+    const unsubscribe = onSnapshot(doc(db, 'users', firebaseUser.uid), (snap) => {
+      if (snap.exists()) {
+        setUserPairingCode(snap.data().pairingCode || null);
+      }
+    });
+    return () => unsubscribe();
+  }, [firebaseUser?.uid]);
 
   const handleThreshold = (val) => {
     setThreshold(val);
@@ -38,6 +53,19 @@ export default function SettingsScreen({ navigation }) {
     const updated = { ...notifs, [key]: val };
     setNotifs(updated);
     updateSettings({ notifications: updated });
+  };
+
+  const handleGenerateCode = async () => {
+    if (!firebaseUser?.uid) return;
+    setGeneratingCode(true);
+    try {
+      const code = await createPairingCode(firebaseUser.uid);
+      setUserPairingCode(code);
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Could not generate code. Please try again.');
+    } finally {
+      setGeneratingCode(false);
+    }
   };
 
   const handleClearData = () => {
@@ -58,6 +86,9 @@ export default function SettingsScreen({ navigation }) {
     );
   };
 
+  const displayCode = userPairingCode || '------';
+  const codeDigits = displayCode.split('');
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* Back / header bar */}
@@ -72,87 +103,164 @@ export default function SettingsScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
-        {/* Check-in toggle */}
-        {role === 'senior' && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>✓ "I'm OK" Check-In</Text>
-            <Text style={styles.cardSub}>
-              Show the "I'm OK" button on your home screen. Turn this off if you prefer your family sees your activity through steps and calendar instead.
-            </Text>
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleInfo}>
-                <Text style={styles.toggleLabel}>Show "I'm OK" button</Text>
-                <Text style={styles.toggleSub}>Appears at the bottom of your home screen</Text>
-              </View>
-              <Switch
-                value={showCheckin}
-                onValueChange={(v) => {
-                  setShowCheckin(v);
-                  updateSettings({ showCheckin: v });
-                }}
-                trackColor={{ false: COLORS.border, true: COLORS.primary }}
-                thumbColor="#fff"
-                style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
-              />
-            </View>
-          </View>
-        )}
-
-        {/* Location Sharing */}
-        {role === 'senior' && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>📍 Location Sharing</Text>
-            <Text style={styles.cardSub}>
-              Share your general location with family. They'll see if you're home, out, or at an appointment — not your exact GPS coordinates.
-            </Text>
-            <View style={styles.toggleRow}>
-              <View style={styles.toggleInfo}>
-                <Text style={styles.toggleLabel}>Share my location</Text>
-                <Text style={styles.toggleSub}>Family will see your general whereabouts</Text>
-              </View>
-              <Switch
-                value={locationSharing}
-                onValueChange={(v) => {
-                  setLocationSharing(v);
-                  updateSettings({ locationSharing: v });
-                }}
-                trackColor={{ false: COLORS.border, true: COLORS.primary }}
-                thumbColor="#fff"
-                style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
-              />
-            </View>
-          </View>
-        )}
-
-        {/* Inactivity threshold */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>⏱ Inactivity Alert</Text>
-          <Text style={styles.cardSub}>
-            Alert family if no activity is detected for:
+        {/* Role section header */}
+        <View style={styles.sectionHeaderCard}>
+          <Text style={styles.sectionHeaderText}>
+            {role === 'senior' ? '👤 Independent Settings' : '👨‍👩‍👧 Caregiver Settings'}
           </Text>
-          <View style={styles.thresholdGrid}>
-            {THRESHOLDS.map((t) => {
-              const active = threshold === t.value;
-              return (
-                <TouchableOpacity
-                  key={t.value}
-                  style={[styles.thresholdBtn, active && styles.thresholdBtnActive]}
-                  onPress={() => handleThreshold(t.value)}
-                  activeOpacity={0.8}
-                  accessibilityLabel={`${t.label}, ${active ? 'selected' : ''}`}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: active }}
-                >
-                  <Text style={[styles.thresholdText, active && styles.thresholdTextActive]}>
-                    {t.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
         </View>
 
-        {/* Notification toggles */}
+        {/* ── INDEPENDENT (SENIOR) SECTIONS ── */}
+        {role === 'senior' && (
+          <>
+            {/* Pairing Code */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>🔗 Your Pairing Code</Text>
+              <Text style={styles.cardSub}>
+                Share this code with a family member or caregiver to connect your accounts
+              </Text>
+              <View style={styles.codeRow}>
+                {codeDigits.map((digit, i) => (
+                  <View key={i} style={styles.codeDigitBox}>
+                    <Text style={styles.codeDigit}>{digit}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.codeNote}>This code links your account with a caregiver's app</Text>
+              <TouchableOpacity
+                style={[styles.generateCodeBtn, generatingCode && { opacity: 0.7 }]}
+                onPress={handleGenerateCode}
+                disabled={generatingCode}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="refresh-outline" size={18} color="#fff" />
+                <Text style={styles.generateCodeBtnText}>
+                  {generatingCode ? 'Generating...' : 'Generate New Code'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Check-in toggle */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>✓ "I'm OK" Check-In</Text>
+              <Text style={styles.cardSub}>
+                Show the "I'm OK" button on your home screen. Turn this off if you prefer your family sees your activity through steps and calendar instead.
+              </Text>
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Text style={styles.toggleLabel}>Show "I'm OK" button</Text>
+                  <Text style={styles.toggleSub}>Appears at the bottom of your home screen</Text>
+                </View>
+                <Switch
+                  value={showCheckin}
+                  onValueChange={(v) => {
+                    setShowCheckin(v);
+                    updateSettings({ showCheckin: v });
+                  }}
+                  trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                  thumbColor="#fff"
+                  style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+                />
+              </View>
+            </View>
+
+            {/* Location Sharing */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>📍 Location Sharing</Text>
+              <Text style={styles.cardSub}>
+                Share your general location with family. They'll see if you're home, out, or at an appointment — not your exact GPS coordinates.
+              </Text>
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Text style={styles.toggleLabel}>Share my location</Text>
+                  <Text style={styles.toggleSub}>Family will see your general whereabouts</Text>
+                </View>
+                <Switch
+                  value={locationSharing}
+                  onValueChange={(v) => {
+                    setLocationSharing(v);
+                    updateSettings({ locationSharing: v });
+                  }}
+                  trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                  thumbColor="#fff"
+                  style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+                />
+              </View>
+            </View>
+
+            {/* Inactivity threshold */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>⏱ Inactivity Alert</Text>
+              <Text style={styles.cardSub}>
+                Alert family if no activity is detected for:
+              </Text>
+              <View style={styles.thresholdGrid}>
+                {THRESHOLDS.map((t) => {
+                  const active = threshold === t.value;
+                  return (
+                    <TouchableOpacity
+                      key={t.value}
+                      style={[styles.thresholdBtn, active && styles.thresholdBtnActive]}
+                      onPress={() => handleThreshold(t.value)}
+                      activeOpacity={0.8}
+                      accessibilityLabel={`${t.label}, ${active ? 'selected' : ''}`}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: active }}
+                    >
+                      <Text style={[styles.thresholdText, active && styles.thresholdTextActive]}>
+                        {t.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </>
+        )}
+
+        {/* ── CAREGIVER (FAMILY) SECTIONS ── */}
+        {role === 'family' && (
+          <>
+            {/* Connected Accounts */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>🔗 Connected Accounts</Text>
+              <Text style={styles.cardSub}>
+                Independent users you're currently connected with
+              </Text>
+              {connectedSeniors && connectedSeniors.length > 0 ? (
+                connectedSeniors.map((senior, i) => (
+                  <View
+                    key={senior.id || i}
+                    style={[styles.connectedRow, i > 0 && styles.connectedRowBorder]}
+                  >
+                    <Text style={styles.connectedAvatar}>{senior.avatar || '🧓'}</Text>
+                    <View style={styles.connectedInfo}>
+                      <Text style={styles.connectedName}>{senior.name || 'Unknown'}</Text>
+                      <Text style={styles.connectedRelation}>{senior.relation || 'Independent'}</Text>
+                    </View>
+                    <View style={styles.connectedBadge}>
+                      <Text style={styles.connectedBadgeText}>✓ Connected</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noConnectionsText}>
+                  No connections yet. Tap below to add one.
+                </Text>
+              )}
+              <TouchableOpacity
+                style={styles.addConnectionBtn}
+                onPress={() => navigation?.navigate?.('Pairing')}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                <Text style={styles.addConnectionBtnText}>Add Connection</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {/* Notification toggles — shown for all roles */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>🔔 Notifications</Text>
 
@@ -199,27 +307,11 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Pairing code */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>🔗 Connection Code</Text>
-          <Text style={styles.cardSub}>
-            Share this code with a family member to connect your accounts
-          </Text>
-          <View style={styles.codeRow}>
-            {MOCK_PAIRING_CODE.split('').map((digit, i) => (
-              <View key={i} style={styles.codeDigitBox}>
-                <Text style={styles.codeDigit}>{digit}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={styles.codeNote}>This code links your device with a family member's app</Text>
-        </View>
-
         {/* Privacy */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>🔒 Privacy</Text>
           <Text style={styles.privacyText}>
-            <Text style={styles.bold}>Your data stays on your device.</Text> In-dependent Living does not store, sell, or share your health information with any third party. All medications, check-ins, and activity data are stored locally on this phone only.
+            Your health and medication data is stored securely in Firebase (Google Cloud) and shared only with family members you've connected with via pairing codes. We use industry-standard encryption. We do not sell your data.
           </Text>
           <Text style={styles.privacyText}>
             For support: Theory Solutions LLC
@@ -230,7 +322,7 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.roleCard}>
           <Text style={styles.roleLabel}>Currently using as:</Text>
           <Text style={styles.roleValue}>
-            {role === 'senior' ? '🧓 Senior' : '👨‍👩‍👧 Family Member'}
+            {role === 'senior' ? '🏠 Independent' : '👨‍👩‍👧 Independent Family/Care'}
           </Text>
         </View>
 
@@ -311,6 +403,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: COLORS.textPrimary,
+  },
+
+  // Section header
+  sectionHeaderCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  sectionHeaderText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
   },
 
   card: {
@@ -418,6 +525,83 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textMuted,
     textAlign: 'center',
+    marginBottom: 16,
+  },
+  generateCodeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  generateCodeBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+
+  // Connected accounts (family)
+  connectedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  connectedRowBorder: {
+    borderTopWidth: 1.5,
+    borderTopColor: COLORS.border,
+  },
+  connectedAvatar: {
+    fontSize: 32,
+  },
+  connectedInfo: {
+    flex: 1,
+  },
+  connectedName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  connectedRelation: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  connectedBadge: {
+    backgroundColor: COLORS.successBg || '#D1FAE5',
+    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  connectedBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.success || '#059669',
+  },
+  noConnectionsText: {
+    fontSize: 15,
+    color: COLORS.textMuted,
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  addConnectionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 12,
+  },
+  addConnectionBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
   },
 
   // Privacy
@@ -453,7 +637,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 
-  // Clear button
+  // Sign out / Clear buttons
   signOutBtn: {
     flexDirection: 'row',
     alignItems: 'center',

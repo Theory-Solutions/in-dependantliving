@@ -44,16 +44,12 @@ export async function createPairingCode(seniorUid) {
     }
   } while (await codeExists(code));
 
-  const expiresAt = new Date();
-  expiresAt.setHours(expiresAt.getHours() + 48); // 48hr expiry
-
   try {
     // Write the pairing code document
     await setDoc(doc(db, 'pairingCodes', code), {
       code,
       seniorUid,
       createdAt: serverTimestamp(),
-      expiresAt: expiresAt.toISOString(),
       used: false,
       useCount: 0,
     });
@@ -91,7 +87,6 @@ export async function connectWithCode(familyUid, code) {
 
   if (!pairing) throw new Error('Code not found. Please check the code and try again.');
   if (pairing.used && pairing.useCount >= 2) throw new Error('This code has already been used the maximum number of times.');
-  if (new Date(pairing.expiresAt) < new Date()) throw new Error('This code has expired. Ask the Independent user to generate a new one.');
 
   const seniorUid = pairing.seniorUid;
   if (seniorUid === familyUid) throw new Error('You cannot pair with yourself.');
