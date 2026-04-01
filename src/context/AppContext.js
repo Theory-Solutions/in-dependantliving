@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthChange } from '../services/authService';
+import { registerForPushNotifications, alertLowMedRefill } from '../services/notificationService';
 import {
   subscribeMedications,
   addMedication as fbAddMed,
@@ -53,6 +54,10 @@ export function AppProvider({ children }) {
     const unsub = onAuthChange(async (user) => {
       setFirebaseUser(user);
       if (user) {
+        // Register for push notifications
+        registerForPushNotifications(user.uid).catch(e =>
+          console.log('[IL] Push notification registration failed:', e.message)
+        );
         // Try AsyncStorage first (fast)
         const storedRole = await AsyncStorage.getItem('userRole');
         if (storedRole) {
@@ -248,6 +253,16 @@ export function AppProvider({ children }) {
       if (med) {
         const newVal = !med.taken?.[timeOfDay];
         await fbMarkTaken(firebaseUser.uid, medId, timeOfDay, newVal);
+
+        // If marking as taken, check if pills are running low
+        if (newVal && med.pillsRemaining != null) {
+          const updatedPills = med.pillsRemaining - 1;
+          if (updatedPills <= 7 && updatedPills >= 0) {
+            alertLowMedRefill(firebaseUser.uid, med.name, updatedPills).catch(e =>
+              console.log('[IL] Low refill alert failed:', e.message)
+            );
+          }
+        }
       }
     } else {
       setMedications(prev => Array.isArray(prev) ? prev.map(med =>

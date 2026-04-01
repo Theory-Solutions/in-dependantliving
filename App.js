@@ -34,6 +34,8 @@ import FamilyDashScreen from './src/screens/FamilyDashScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import SOSScreen from './src/screens/SOSScreen';
 import LocationScreen from './src/screens/LocationScreen';
+import SubscriptionScreen from './src/screens/SubscriptionScreen';
+import WellnessSummaryScreen from './src/screens/WellnessSummaryScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -74,6 +76,8 @@ function HomeStack() {
       <Stack.Screen name="HomeMain" component={SeniorHomeScreen} />
       <Stack.Screen name="Weather" component={WeatherScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="WellnessSummary" component={WellnessSummaryScreen} />
       <Stack.Screen
         name="SOS"
         component={SOSScreen}
@@ -214,6 +218,7 @@ function RootNavigator() {
         <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="Pairing" component={PairingScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Subscription" component={SubscriptionScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
