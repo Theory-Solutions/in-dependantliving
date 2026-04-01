@@ -279,7 +279,7 @@ function SignUpForm({ onRegistered }) {
     setLoading(true);
     try {
       await registerUser({ email: email.trim(), password, name: name.trim(), role: selectedRole });
-      await setRole(selectedRole);
+      // DON'T set role yet — let PairingScreen handle it after pairing completes
       if (onRegistered) onRegistered(selectedRole);
       // AppContext auth listener will detect the user
     } catch (err) {
@@ -395,8 +395,11 @@ export default function AuthScreen({ navigation }) {
     }
   };
 
-  const handleRegistered = (role) => {
-    // After signup, go to pairing screen
+  const handleRegistered = async (selectedRole) => {
+    // DON'T set the role yet — navigate to pairing first
+    // Role gets set after pairing completes (or user skips)
+    // Store role temporarily so PairingScreen knows which view to show
+    await AsyncStorage.setItem('pendingRole', selectedRole);
     if (navigation) {
       navigation.navigate('Pairing');
     }

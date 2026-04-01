@@ -60,6 +60,14 @@ export function AppProvider({ children }) {
         registerForPushNotifications(user.uid).catch(e =>
           console.log('[IL] Push notification registration failed:', e.message)
         );
+        // Check if user is in the middle of pairing flow
+        const pendingRole = await AsyncStorage.getItem('pendingRole');
+        if (pendingRole) {
+          // User just signed up — DON'T set role yet, let PairingScreen handle it
+          console.log('[IL] Pending role detected, waiting for pairing to complete');
+          return;
+        }
+        
         // Try AsyncStorage first (fast)
         const storedRole = await AsyncStorage.getItem('userRole');
         if (storedRole) {

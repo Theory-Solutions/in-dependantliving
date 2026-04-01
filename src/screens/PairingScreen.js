@@ -23,6 +23,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createPairingCode, connectWithCode } from '../services/pairingService';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
@@ -265,27 +266,45 @@ function SuccessView({ connectedName, onContinue }) {
 
 // ── Main Screen ────────────────────────────────────────────────────────────
 export default function PairingScreen({ navigation, route }) {
-  const { role } = useApp();
+  const { role, setRole, firebaseUser } = useApp();
   const [connectedName, setConnectedName] = useState(null);
+  const [pendingRole, setPendingRole] = useState(role);
 
-  const isSenior = role === 'senior';
+  // Read pending role from AsyncStorage (set during signup before role is committed)
+  useEffect(() => {
+    (async () => {
+      const stored = await AsyncStorage.getItem('pendingRole');
+      if (stored) setPendingRole(stored);
+    })();
+  }, []);
 
-  const handleSkip = () => {
-    // No pairing code entered — send to subscription screen
-    if (navigation) {
-      navigation.navigate('Subscription');
-    }
+  const isSenior = pendingRole === 'senior';
+
+  const commitRoleAndNavigate = async (destination) => {
+    // Now actually set the role — this triggers RootNavigator to show the main app
+    const finalRole = pendingRole || 'senior';
+    await AsyncStorage.removeItem('pendingRole');
+    await setRole(finalRole);
+    // The RootNavigator will automatically switch to the app
+  };
+
+  const handleSkip = async () => {
+    // No pairing code entered — go to subscription FIRST, then set role after they subscribe/skip
+    const finalRole = pendingRole || 'senior';
+    await AsyncStorage.removeItem('pendingRole');
+    await AsyncStorage.setItem('pendingSubscription', 'true');
+    await setRole(finalRole);
+    // RootNavigator will show the app, but we'll check for pendingSubscription 
+    // to show the paywall on first load
   };
 
   const handleSuccess = (name) => {
     setConnectedName(name);
   };
 
-  const handleContinue = () => {
-    // Paired successfully — skip paywall, go straight to app
-    if (navigation) {
-      navigation.reset({ index: 0, routes: [{ name: 'App' }] });
-    }
+  const handleContinue = async () => {
+    // Paired successfully — set role, app loads automatically
+    await commitRoleAndNavigate('App');
   };
 
   return (

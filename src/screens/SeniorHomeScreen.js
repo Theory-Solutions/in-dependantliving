@@ -63,6 +63,20 @@ export default function SeniorHomeScreen({ navigation }) {
   const [now, setNow] = useState(new Date());
   const [checkinDone, setCheckinDone] = useState(false);
 
+  // Check for pending subscription (user skipped pairing)
+  useEffect(() => {
+    (async () => {
+      const pending = await AsyncStorage.getItem('pendingSubscription');
+      if (pending === 'true') {
+        await AsyncStorage.removeItem('pendingSubscription');
+        // Navigate to subscription screen on first load
+        setTimeout(() => {
+          navigation?.navigate?.('Subscription');
+        }, 500);
+      }
+    })();
+  }, []);
+
   // Contacts state
   const [contacts, setContacts] = useState([]);
   const [showAddContact, setShowAddContact] = useState(false);
