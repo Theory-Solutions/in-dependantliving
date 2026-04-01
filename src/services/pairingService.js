@@ -79,6 +79,11 @@ export async function connectWithCode(familyUid, code) {
   const familyData = familySnap.data();
   const seniorData = seniorSnap.data();
 
+  // Enforce max 2 caregivers per senior
+  if (seniorData.pairedWith && seniorData.pairedWith.length >= 2) {
+    throw new Error('This account already has 2 caregivers connected. Maximum reached.');
+  }
+
   const updatedFamilyPaired = [...new Set([...(familyData.pairedWith || []), seniorUid])];
   const updatedSeniorPaired = [...new Set([...(seniorData.pairedWith || []), familyUid])];
 

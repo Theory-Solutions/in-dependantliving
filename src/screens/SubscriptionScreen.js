@@ -13,6 +13,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -67,9 +68,16 @@ export default function SubscriptionScreen({ navigation, onSubscribe, onSkip }) 
         {
           text: 'Continue Anyway',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
+            try {
+              await AsyncStorage.setItem('subscribed', 'false');
+            } catch (e) {
+              console.log('[IL] Could not save subscription state:', e.message);
+            }
             onSkip?.();
-            navigation?.navigate('App');
+            if (navigation) {
+              navigation.reset({ index: 0, routes: [{ name: 'App' }] });
+            }
           },
         },
       ]

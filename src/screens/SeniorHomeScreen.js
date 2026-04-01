@@ -9,17 +9,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  Linking, Alert, TextInput, Modal, KeyboardAvoidingView, Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
+import { getTodaySteps, isStepCountingAvailable } from '../services/healthService';
 // User name comes from Firebase auth or defaults to 'Friend'
 
-const MOCK_CONTACTS = [];
-
-const MOCK_STEPS = 0;
 const STEP_GOAL = 10000;
 
 const MOCK_SCHEDULE = [];
@@ -31,6 +33,10 @@ const SCHEDULE_COLORS = {
   checkin:     '#0D9488',
   social:      '#DB2777',
 };
+
+const RELATION_OPTIONS = ['Son', 'Daughter', 'Spouse', 'Doctor', 'Friend', 'Other'];
+
+const CONTACTS_STORAGE_KEY = 'senior_family_contacts';
 
 function formatDate(d) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -44,11 +50,57 @@ function getGreeting(name) {
   return `Good Night, ${name}!`;
 }
 
+function getAvatarEmoji(relation) {
+  const map = {
+    Son: '👦', Daughter: '👧', Spouse: '💑',
+    Doctor: '👨‍⚕️', Friend: '😊', Other: '👤',
+  };
+  return map[relation] || '👤';
+}
+
 export default function SeniorHomeScreen({ navigation }) {
-  const { medications, settings, doCheckin, firebaseUser } = useApp();
+  const { medications, settings, doCheckin, firebaseUser, calendarEvents } = useApp();
   const [now, setNow] = useState(new Date());
   const [checkinDone, setCheckinDone] = useState(false);
-  // SOS button is now in the header — no animation needed
+
+  // Contacts state
+  const [contacts, setContacts] = useState([]);
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [newContact, setNewContact] = useState({ name: '', relation: 'Son', phone: '' });
+
+  // Steps state
+  const [realSteps, setRealSteps] = useState(0);
+  const [stepsAvailable, setStepsAvailable] = useState(false);
+
+  // Load contacts from AsyncStorage on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(CONTACTS_STORAGE_KEY);
+        if (stored) setContacts(JSON.parse(stored));
+      } catch (e) {
+        console.log('[IL] Could not load contacts:', e.message);
+      }
+    })();
+  }, []);
+
+  // Load steps
+  useEffect(() => {
+    (async () => {
+      const available = await isStepCountingAvailable();
+      setStepsAvailable(available);
+      if (available) {
+        const steps = await getTodaySteps();
+        setRealSteps(steps);
+      }
+    })();
+    // Refresh every 5 minutes
+    const interval = setInterval(async () => {
+      const steps = await getTodaySteps();
+      setRealSteps(steps);
+    }, 300000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleCall = (contact) => {
     Alert.alert(
@@ -64,6 +116,38 @@ export default function SeniorHomeScreen({ navigation }) {
         }},
       ]
     );
+  };
+
+  const handleSaveContact = async () => {
+    if (!newContact.name.trim()) {
+      Alert.alert('Missing Name', 'Please enter a name for this contact.');
+      return;
+    }
+    if (!newContact.phone.trim()) {
+      Alert.alert('Missing Phone', 'Please enter a phone number.');
+      return;
+    }
+    const contact = {
+      id: Date.now().toString(),
+      name: newContact.name.trim(),
+      relation: newContact.relation,
+      phone: newContact.phone.trim(),
+      avatar: getAvatarEmoji(newContact.relation),
+    };
+    const updated = [...contacts, contact];
+    setContacts(updated);
+    try {
+      await AsyncStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.log('[IL] Could not save contacts:', e.message);
+    }
+    setShowAddContact(false);
+    setNewContact({ name: '', relation: 'Son', phone: '' });
+  };
+
+  const handleCancelContact = () => {
+    setShowAddContact(false);
+    setNewContact({ name: '', relation: 'Son', phone: '' });
   };
 
   const showCheckin = settings?.showCheckin !== false; // default on, can disable in settings
@@ -86,8 +170,17 @@ export default function SeniorHomeScreen({ navigation }) {
   const totalDoses = allDoseEvents.length;
   const takenDoses = allDoseEvents.filter(d => d.taken).length;
 
-  const stepsPct = Math.min((MOCK_STEPS / STEP_GOAL) * 100, 100);
+  const stepsPct = Math.min((realSteps / STEP_GOAL) * 100, 100);
   const firstName = firebaseUser?.displayName?.split(' ')[0] || 'Friend';
+
+  // Get today's calendar events from Firebase (or empty)
+  const todayStr = now.toISOString().split('T')[0];
+  const todayEvents = (calendarEvents || [])
+    .filter(e => e.date === todayStr)
+    .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+    .slice(0, 4); // show max 4 on home screen
+
+  const scheduleToShow = todayEvents.length > 0 ? todayEvents : MOCK_SCHEDULE;
 
   // Navigate to a tab by name (works because this screen is inside HomeStack inside the tab navigator)
   const goToTab = (tabName) => {
@@ -147,10 +240,10 @@ export default function SeniorHomeScreen({ navigation }) {
                 <Text style={styles.cardAction}>See All →</Text>
               </TouchableOpacity>
             </View>
-            {MOCK_SCHEDULE.length > 0 ? MOCK_SCHEDULE.map((event, i) => (
+            {scheduleToShow.length > 0 ? scheduleToShow.map((event, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.scheduleRow, i === MOCK_SCHEDULE.length - 1 && styles.scheduleRowLast]}
+                style={[styles.scheduleRow, i === scheduleToShow.length - 1 && styles.scheduleRowLast]}
                 onPress={() => goToTab('Calendar')}
                 activeOpacity={0.75}
               >
@@ -184,24 +277,26 @@ export default function SeniorHomeScreen({ navigation }) {
               <Text style={styles.cardTitle}>Today's Steps</Text>
               <Text style={styles.cardAction}>View Apps →</Text>
             </View>
-            {MOCK_STEPS > 0 ? (
+            {stepsAvailable && realSteps > 0 ? (
               <>
-                <Text style={styles.stepsCount}>{MOCK_STEPS.toLocaleString()}</Text>
+                <Text style={styles.stepsCount}>{realSteps.toLocaleString()}</Text>
                 <Text style={styles.stepsGoal}>Daily goal: {STEP_GOAL.toLocaleString()} steps</Text>
                 <View style={styles.progressTrack}>
                   <View style={[styles.progressFill, { width: `${stepsPct}%` }]} />
                 </View>
                 <View style={styles.stepsBottomRow}>
                   <Text style={styles.stepsPct}>{Math.round(stepsPct)}% of goal</Text>
-                  <Text style={styles.stepsRemaining}>{(STEP_GOAL - MOCK_STEPS).toLocaleString()} steps to go</Text>
+                  <Text style={styles.stepsRemaining}>{(STEP_GOAL - realSteps).toLocaleString()} steps to go</Text>
                 </View>
               </>
             ) : (
               <View style={{ paddingVertical: 16, alignItems: 'center' }}>
                 <Text style={styles.stepsCount}>0</Text>
-                <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, marginTop: 4 }}>
-                  Connect a fitness tracker to see your steps
-                </Text>
+                {!stepsAvailable && (
+                  <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, marginTop: 4 }}>
+                    Connect a fitness tracker to see your steps
+                  </Text>
+                )}
               </View>
             )}
           </TouchableOpacity>
@@ -241,11 +336,67 @@ export default function SeniorHomeScreen({ navigation }) {
               <Text style={styles.cardIcon}>📞</Text>
               <Text style={styles.cardTitle}>Call Family</Text>
             </View>
-            {MOCK_CONTACTS.length > 0 ? (
+
+            {/* Add Contact inline form */}
+            {showAddContact && (
+              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <View style={styles.addContactForm}>
+                  <Text style={styles.addContactFormTitle}>Add Family Contact</Text>
+
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Name"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={newContact.name}
+                    onChangeText={t => setNewContact(p => ({ ...p, name: t }))}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                  />
+
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Phone number"
+                    placeholderTextColor={COLORS.textMuted}
+                    value={newContact.phone}
+                    onChangeText={t => setNewContact(p => ({ ...p, phone: t }))}
+                    keyboardType="phone-pad"
+                    returnKeyType="done"
+                  />
+
+                  <Text style={styles.formLabel}>Relation</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      {RELATION_OPTIONS.map(r => (
+                        <TouchableOpacity
+                          key={r}
+                          style={[styles.relationChip, newContact.relation === r && styles.relationChipActive]}
+                          onPress={() => setNewContact(p => ({ ...p, relation: r }))}
+                        >
+                          <Text style={[styles.relationChipText, newContact.relation === r && styles.relationChipTextActive]}>
+                            {r}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+
+                  <View style={styles.formBtns}>
+                    <TouchableOpacity style={styles.formCancelBtn} onPress={handleCancelContact}>
+                      <Text style={styles.formCancelBtnText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.formSaveBtn} onPress={handleSaveContact}>
+                      <Text style={styles.formSaveBtnText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </KeyboardAvoidingView>
+            )}
+
+            {contacts.length > 0 ? (
               <>
                 <Text style={styles.callSubtext}>One tap to connect with your loved ones</Text>
                 <View style={styles.callGrid}>
-                  {MOCK_CONTACTS.map(contact => (
+                  {contacts.map(contact => (
                     <TouchableOpacity
                       key={contact.id}
                       style={styles.callCard}
@@ -261,22 +412,34 @@ export default function SeniorHomeScreen({ navigation }) {
                       </View>
                     </TouchableOpacity>
                   ))}
-                  <TouchableOpacity style={styles.addContactCard} activeOpacity={0.8}>
+                  {!showAddContact && (
+                    <TouchableOpacity
+                      style={styles.addContactCard}
+                      activeOpacity={0.8}
+                      onPress={() => setShowAddContact(true)}
+                    >
+                      <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
+                      <Text style={styles.addContactText}>Add Contact</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            ) : (
+              !showAddContact && (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 }}>
+                    Add your family contacts below
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.addContactCard}
+                    activeOpacity={0.8}
+                    onPress={() => setShowAddContact(true)}
+                  >
                     <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
                     <Text style={styles.addContactText}>Add Contact</Text>
                   </TouchableOpacity>
                 </View>
-              </>
-            ) : (
-              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 }}>
-                  Add your emergency contacts in Settings
-                </Text>
-                <TouchableOpacity style={styles.addContactCard} activeOpacity={0.8} onPress={() => goToTab('Settings')}>
-                  <Ionicons name="add-circle-outline" size={32} color={COLORS.textMuted} />
-                  <Text style={styles.addContactText}>Add Contact</Text>
-                </TouchableOpacity>
-              </View>
+              )
             )}
           </View>
 
@@ -303,7 +466,7 @@ export default function SeniorHomeScreen({ navigation }) {
               accessibilityLabel="Steps today"
             >
               <Text style={styles.statIcon}>👟</Text>
-              <Text style={styles.statValue}>{MOCK_STEPS.toLocaleString()}</Text>
+              <Text style={styles.statValue}>{realSteps.toLocaleString()}</Text>
               <Text style={styles.statLabel}>Steps</Text>
               <Text style={styles.statArrow}>›</Text>
             </TouchableOpacity>
@@ -315,7 +478,7 @@ export default function SeniorHomeScreen({ navigation }) {
               accessibilityLabel="Events today"
             >
               <Text style={styles.statIcon}>📅</Text>
-              <Text style={styles.statValue}>{MOCK_SCHEDULE.length}</Text>
+              <Text style={styles.statValue}>{scheduleToShow.length}</Text>
               <Text style={styles.statLabel}>Events</Text>
               <Text style={styles.statArrow}>›</Text>
             </TouchableOpacity>
@@ -490,6 +653,90 @@ const styles = StyleSheet.create({
     minHeight: 120,
   },
   addContactText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '600', marginTop: 6 },
+
+  // Add Contact Form
+  addContactForm: {
+    backgroundColor: COLORS.background,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + '55',
+  },
+  addContactFormTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 12,
+  },
+  formInput: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    marginBottom: 10,
+  },
+  formLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    marginBottom: 8,
+  },
+  relationChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  relationChipActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
+  },
+  relationChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+  },
+  relationChipTextActive: {
+    color: COLORS.primary,
+    fontWeight: '800',
+  },
+  formBtns: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  formCancelBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+  formCancelBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+  },
+  formSaveBtn: {
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  formSaveBtnText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#fff',
+  },
 
   // SOS float styles removed — button is now in header
 

@@ -271,10 +271,9 @@ export default function PairingScreen({ navigation, route }) {
   const isSenior = role === 'senior';
 
   const handleSkip = () => {
-    // Navigate to main app — the role is already set in AppContext
-    // The RootNavigator will automatically show the right tabs
+    // No pairing code entered — send to subscription screen
     if (navigation) {
-      navigation.reset({ index: 0, routes: [{ name: 'App' }] });
+      navigation.navigate('Subscription');
     }
   };
 
@@ -283,6 +282,7 @@ export default function PairingScreen({ navigation, route }) {
   };
 
   const handleContinue = () => {
+    // Paired successfully — skip paywall, go straight to app
     if (navigation) {
       navigation.reset({ index: 0, routes: [{ name: 'App' }] });
     }

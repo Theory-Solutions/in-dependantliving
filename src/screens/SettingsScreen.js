@@ -234,7 +234,38 @@ export default function SettingsScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Danger zone */}
+        {/* Sign Out */}
+        <TouchableOpacity
+          style={styles.signOutBtn}
+          onPress={() => {
+            Alert.alert(
+              'Sign Out',
+              'Are you sure you want to sign out?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Sign Out',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const { signOut } = require('firebase/auth');
+                      const { auth } = require('../config/firebase');
+                      await signOut(auth);
+                    } catch (e) {}
+                    await AsyncStorage.clear();
+                    setRole(null);
+                  },
+                },
+              ]
+            );
+          }}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="log-out-outline" size={20} color={COLORS.primary} />
+          <Text style={styles.signOutBtnText}>Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* Clear data */}
         <TouchableOpacity
           style={styles.clearBtn}
           onPress={handleClearData}
@@ -423,6 +454,23 @@ const styles = StyleSheet.create({
   },
 
   // Clear button
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: 16,
+    paddingVertical: 18,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    marginBottom: 12,
+    backgroundColor: COLORS.surface,
+  },
+  signOutBtnText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
   clearBtn: {
     borderRadius: 16,
     paddingVertical: 20,

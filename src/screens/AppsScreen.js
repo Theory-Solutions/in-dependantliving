@@ -8,156 +8,215 @@
  * via any medium, is strictly prohibited.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
-
-// ─── App catalog ──────────────────────────────────────────────────────────────
-
-const APP_SECTIONS = [
-  {
-    title: '⌚ Wearables & Activity',
-    subtitle: 'Connect your watch or fitness tracker',
-    apps: [
-      {
-        id: 'apple_watch',
-        icon: '⌚',
-        name: 'Apple Watch',
-        badge: 'Best for iPhone',
-        badgeColor: '#1A6FA3',
-        description: 'Steps, heart rate, fall detection, ECG, sleep, blood oxygen — all automatic via Apple Health',
-        platform: 'iOS',
-        connected: false,
-        highlight: true,
-      },
-      {
-        id: 'fitbit',
-        icon: '🏃',
-        name: 'Fitbit',
-        badge: 'iOS & Android',
-        badgeColor: '#00B0B9',
-        description: 'Steps, sleep, heart rate, active minutes. Works on both iPhone and Android.',
-        platform: 'both',
-        connected: false,
-      },
-      {
-        id: 'apple_health',
-        icon: '❤️',
-        name: 'Apple Health',
-        badge: 'iPhone built-in',
-        badgeColor: '#FF2D55',
-        description: 'Aggregates data from Apple Watch, iPhone, and any HealthKit-compatible device.',
-        platform: 'iOS',
-        connected: false,
-      },
-    ],
-  },
-];
-
-// ─── Connected app card ───────────────────────────────────────────────────────
-
-function ConnectedCard({ app }) {
-  return (
-    <View style={[styles.appCard, styles.appCardConnected, app.highlight && styles.appCardHighlight]}>
-      {app.highlight && (
-        <LinearGradient
-          colors={['#0E4D7A', '#1A6FA3']}
-          style={styles.highlightBanner}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-        >
-          <Text style={styles.highlightBannerText}>⭐ Recommended for most users</Text>
-        </LinearGradient>
-      )}
-      <View style={styles.appCardTop}>
-        <Text style={styles.appIcon}>{app.icon}</Text>
-        <View style={styles.appInfo}>
-          <View style={styles.appNameRow}>
-            <Text style={styles.appName}>{app.name}</Text>
-            {app.badge && (
-              <View style={[styles.appBadge, { backgroundColor: app.badgeColor + '22', borderColor: app.badgeColor }]}>
-                <Text style={[styles.appBadgeText, { color: app.badgeColor }]}>{app.badge}</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.appDesc}>{app.description}</Text>
-        </View>
-        <View style={styles.connectedBadge}>
-          <View style={styles.connectedDot} />
-          <Text style={styles.connectedText}>Live</Text>
-        </View>
-      </View>
-
-      {/* Data rows */}
-      {app.data && (
-        <View style={styles.dataGrid}>
-          {app.data.map((d, i) => (
-            <View key={i} style={styles.dataItem}>
-              <Text style={styles.dataIcon}>{d.icon}</Text>
-              <Text style={styles.dataValue}>{d.value}</Text>
-              <Text style={styles.dataLabel}>{d.label}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      <View style={styles.connectedFooter}>
-        <Text style={styles.syncText}>🔄 Last sync: {app.lastSync}</Text>
-        <TouchableOpacity style={styles.manageBtn}>
-          <Text style={styles.manageBtnText}>Manage</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-// ─── Disconnected app card ────────────────────────────────────────────────────
-
-function DisconnectedCard({ app }) {
-  const handleConnect = () => {
-    Alert.alert(
-      `Connect ${app.name}`,
-      `This will open ${app.name} to authorize the connection. In-Dependent will only read your activity and health data — never write or share it without your permission.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Connect', onPress: () => Alert.alert('Coming Soon', 'Live integrations are coming in the next update!') },
-      ]
-    );
-  };
-
-  const platformColor = app.platform === 'iOS' ? '#1A6FA3' : app.platform === 'Android' ? '#34A853' : COLORS.textMuted;
-  const platformLabel = app.platform === 'iOS' ? '🍎 iPhone only' : app.platform === 'Android' ? '🤖 Android only' : '📱 iOS & Android';
-
-  return (
-    <View style={styles.appCard}>
-      <View style={styles.appCardTop}>
-        <Text style={styles.appIcon}>{app.icon}</Text>
-        <View style={styles.appInfo}>
-          <View style={styles.appNameRow}>
-            <Text style={styles.appName}>{app.name}</Text>
-            {app.badge && (
-              <View style={[styles.appBadge, { backgroundColor: app.badgeColor + '22', borderColor: app.badgeColor }]}>
-                <Text style={[styles.appBadgeText, { color: app.badgeColor }]}>{app.badge}</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.appDesc}>{app.description}</Text>
-          <Text style={[styles.platformLabel, { color: platformColor }]}>{platformLabel}</Text>
-        </View>
-      </View>
-      <TouchableOpacity style={styles.connectBtn} onPress={handleConnect} activeOpacity={0.85}>
-        <Ionicons name="link" size={16} color="#fff" style={{ marginRight: 6 }} />
-        <Text style={styles.connectBtnText}>Connect</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
+import { isStepCountingAvailable } from '../services/healthService';
+import { isFitbitConnected, connectFitbit } from '../services/fitbitService';
 
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function AppsScreen() {
+  const [appleHealthConnected, setAppleHealthConnected] = useState(false);
+  const [fitbitConnected, setFitbitConnected] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const available = await isStepCountingAvailable();
+      setAppleHealthConnected(available);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      setFitbitConnected(await isFitbitConnected());
+    })();
+  }, []);
+
+  // Build app sections with live connection state
+  const APP_SECTIONS = [
+    {
+      title: '⌚ Wearables & Activity',
+      subtitle: 'Connect your watch or fitness tracker',
+      apps: [
+        {
+          id: 'apple_watch',
+          icon: '⌚',
+          name: 'Apple Watch',
+          badge: 'Best for iPhone',
+          badgeColor: '#1A6FA3',
+          description: 'Steps, heart rate, fall detection, ECG, sleep, blood oxygen — all automatic via Apple Health',
+          platform: 'iOS',
+          connected: appleHealthConnected,
+          highlight: true,
+        },
+        {
+          id: 'fitbit',
+          icon: '🏃',
+          name: 'Fitbit',
+          badge: 'iOS & Android',
+          badgeColor: '#00B0B9',
+          description: 'Steps, sleep, heart rate, active minutes. Works on both iPhone and Android.',
+          platform: 'both',
+          connected: fitbitConnected,
+        },
+        {
+          id: 'apple_health',
+          icon: '❤️',
+          name: 'Apple Health',
+          badge: 'iPhone built-in',
+          badgeColor: '#FF2D55',
+          description: 'Aggregates data from Apple Watch, iPhone, and any HealthKit-compatible device.',
+          platform: 'iOS',
+          connected: appleHealthConnected,
+        },
+      ],
+    },
+  ];
+
+  // ─── Connected app card ─────────────────────────────────────────────────────
+
+  function ConnectedCard({ app }) {
+    return (
+      <View style={[styles.appCard, styles.appCardConnected, app.highlight && styles.appCardHighlight]}>
+        {app.highlight && (
+          <LinearGradient
+            colors={['#0E4D7A', '#1A6FA3']}
+            style={styles.highlightBanner}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          >
+            <Text style={styles.highlightBannerText}>⭐ Recommended for most users</Text>
+          </LinearGradient>
+        )}
+        <View style={styles.appCardTop}>
+          <Text style={styles.appIcon}>{app.icon}</Text>
+          <View style={styles.appInfo}>
+            <View style={styles.appNameRow}>
+              <Text style={styles.appName}>{app.name}</Text>
+              {app.badge && (
+                <View style={[styles.appBadge, { backgroundColor: app.badgeColor + '22', borderColor: app.badgeColor }]}>
+                  <Text style={[styles.appBadgeText, { color: app.badgeColor }]}>{app.badge}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.appDesc}>{app.description}</Text>
+          </View>
+          <View style={styles.connectedBadge}>
+            <View style={styles.connectedDot} />
+            <Text style={styles.connectedText}>Live</Text>
+          </View>
+        </View>
+
+        {app.data && (
+          <View style={styles.dataGrid}>
+            {app.data.map((d, i) => (
+              <View key={i} style={styles.dataItem}>
+                <Text style={styles.dataIcon}>{d.icon}</Text>
+                <Text style={styles.dataValue}>{d.value}</Text>
+                <Text style={styles.dataLabel}>{d.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View style={styles.connectedFooter}>
+          <Text style={styles.syncText}>🔄 Syncing via pedometer</Text>
+          <TouchableOpacity style={styles.manageBtn}>
+            <Text style={styles.manageBtnText}>Manage</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ─── Disconnected app card ──────────────────────────────────────────────────
+
+  function DisconnectedCard({ app }) {
+    const handleConnect = async () => {
+      if (app.id === 'fitbit') {
+        try {
+          await connectFitbit();
+        } catch (e) {
+          Alert.alert('Fitbit', e.message || 'Could not connect Fitbit.');
+        }
+        return;
+      }
+
+      // Apple Watch / Apple Health — pedometer permission
+      if (app.id === 'apple_watch' || app.id === 'apple_health') {
+        Alert.alert(
+          `Connect ${app.name}`,
+          'In-Dependent will request access to your step data from Apple Health. Please allow when prompted.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Allow',
+              onPress: async () => {
+                const available = await isStepCountingAvailable();
+                setAppleHealthConnected(available);
+                if (!available) {
+                  Alert.alert(
+                    'Not Available',
+                    'Pedometer is not available on this device. An Apple Watch or iPhone with motion tracking is required.'
+                  );
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      Alert.alert(
+        `Connect ${app.name}`,
+        `This will open ${app.name} to authorize the connection. In-Dependent will only read your activity and health data — never write or share it without your permission.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Connect', onPress: () => Alert.alert('Coming Soon', 'Live integrations are coming in the next update!') },
+        ]
+      );
+    };
+
+    const platformColor = app.platform === 'iOS' ? '#1A6FA3' : app.platform === 'Android' ? '#34A853' : COLORS.textMuted;
+    const platformLabel = app.platform === 'iOS' ? '🍎 iPhone only' : app.platform === 'Android' ? '🤖 Android only' : '📱 iOS & Android';
+
+    return (
+      <View style={[styles.appCard, app.highlight && styles.appCardHighlight]}>
+        {app.highlight && (
+          <LinearGradient
+            colors={['#0E4D7A', '#1A6FA3']}
+            style={styles.highlightBanner}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          >
+            <Text style={styles.highlightBannerText}>⭐ Recommended for most users</Text>
+          </LinearGradient>
+        )}
+        <View style={styles.appCardTop}>
+          <Text style={styles.appIcon}>{app.icon}</Text>
+          <View style={styles.appInfo}>
+            <View style={styles.appNameRow}>
+              <Text style={styles.appName}>{app.name}</Text>
+              {app.badge && (
+                <View style={[styles.appBadge, { backgroundColor: app.badgeColor + '22', borderColor: app.badgeColor }]}>
+                  <Text style={[styles.appBadgeText, { color: app.badgeColor }]}>{app.badge}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.appDesc}>{app.description}</Text>
+            <Text style={[styles.platformLabel, { color: platformColor }]}>{platformLabel}</Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.connectBtn} onPress={handleConnect} activeOpacity={0.85}>
+          <Ionicons name="link" size={16} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={styles.connectBtnText}>Connect</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>

@@ -20,6 +20,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { COLORS } from '../constants/colors';
 import parseEventText from '../utils/parseEventText';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 const { width } = Dimensions.get('window');
 
@@ -42,7 +44,26 @@ function dateLabel(key) {
   return key;
 }
 
-const MOCK_EVENTS = [];
+// Demo events — shown until user adds real ones
+// These populate from the user's Firebase calendar once they add events
+const today = new Date();
+const nextWeekDemo = new Date(today); nextWeekDemo.setDate(today.getDate() + 5);
+const nextWeekDemoStr = nextWeekDemo.toISOString().split('T')[0];
+
+const MOCK_EVENTS = [
+  {
+    id: 'demo-1',
+    title: 'Dentist Appointment',
+    date: nextWeekDemoStr,
+    time: '10:00 AM',
+    category: 'appointment',
+    isPrivate: false,
+    color: '#7C3AED',
+    location: 'Tucson Dental Care',
+    reminder: '1 day',
+    _isDemo: true,
+  },
+];
 
 // ─── Category definitions ────────────────────────────────────────────────────
 
@@ -1169,6 +1190,86 @@ export default function CalendarScreen() {
 
   const grouped = groupEventsByDate(events);
 
+  // ── PDF Export ─────────────────────────────────────────────────────────
+  const handleExportPDF = async () => {
+    try {
+      // Build HTML for the calendar
+      const dateGroups = Object.entries(grouped);
+      
+      const eventsHtml = dateGroups.map(([dateStr, dayEvents]) => {
+        const label = formatGroupLabel(dateStr);
+        const eventRows = dayEvents.map(ev => {
+          const cat = CATEGORIES.find(c => c.key === ev.category);
+          const emoji = cat?.emoji || '📅';
+          const privateBadge = ev.isPrivate ? ' 🔒' : '';
+          const rideBadge = ev.needsRide ? ' 🚗' : '';
+          return `
+            <tr>
+              <td style="padding:8px 12px;color:#666;font-size:13px;white-space:nowrap;">${ev.time || '—'}</td>
+              <td style="padding:8px 4px;font-size:16px;">${emoji}</td>
+              <td style="padding:8px 12px;">
+                <strong style="font-size:15px;">${ev.title}${privateBadge}${rideBadge}</strong>
+                ${ev.location ? `<br><span style="color:#888;font-size:12px;">📍 ${ev.location}</span>` : ''}
+              </td>
+              <td style="padding:8px 12px;">
+                ${ev.reminder ? `<span style="background:#E8F4FD;color:#1A6FA3;padding:2px 8px;border-radius:10px;font-size:11px;">⏰ ${ev.reminder}</span>` : ''}
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        return `
+          <tr>
+            <td colspan="4" style="background:#1A6FA3;color:white;padding:10px 14px;font-size:16px;font-weight:bold;border-radius:4px;">
+              ${label}
+            </td>
+          </tr>
+          ${eventRows}
+          <tr><td colspan="4" style="height:8px;"></td></tr>
+        `;
+      }).join('');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: -apple-system, Arial, sans-serif; margin: 32px; color: #111; }
+            h1 { color: #1A6FA3; font-size: 24px; margin-bottom: 4px; }
+            .subtitle { color: #888; font-size: 14px; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; }
+            td { vertical-align: top; }
+            .footer { margin-top: 32px; color: #bbb; font-size: 11px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <h1>📅 My Calendar</h1>
+          <div class="subtitle">Printed from In-dependent Living · ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+          <table>
+            ${eventsHtml || '<tr><td style="padding:20px;color:#888;">No upcoming events</td></tr>'}
+          </table>
+          <div class="footer">In-dependent Living · © 2026 Theory Solutions LLC</div>
+        </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Share or Print Calendar',
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        await Print.printAsync({ uri });
+      }
+    } catch (e) {
+      Alert.alert('Export Failed', e.message || 'Could not generate PDF. Please try again.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       {/* Header */}
@@ -1193,7 +1294,7 @@ export default function CalendarScreen() {
               onPress={() => setShowVoiceModal(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={{ fontSize: 22 }}>🎤</Text>
+              <Text style={{ fontSize: 20 }}>🎤</Text>
             </TouchableOpacity>
 
             {/* Scanner */}
@@ -1202,7 +1303,25 @@ export default function CalendarScreen() {
               onPress={() => setShowScanModal(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="camera" size={24} color="#fff" />
+              <Ionicons name="camera" size={22} color="#fff" />
+            </TouchableOpacity>
+
+            {/* PDF Export */}
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={handleExportPDF}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="document-text-outline" size={22} color="#fff" />
+            </TouchableOpacity>
+
+            {/* ADD EVENT — moved to header */}
+            <TouchableOpacity
+              style={styles.headerAddBtn}
+              onPress={() => openAddModal({})}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="add" size={22} color="#fff" />
             </TouchableOpacity>
 
             {/* View toggle */}
@@ -1212,7 +1331,7 @@ export default function CalendarScreen() {
             >
               <Ionicons
                 name={viewMode === 'agenda' ? 'calendar-outline' : viewMode === 'week' ? 'grid-outline' : 'list-outline'}
-                size={20}
+                size={18}
                 color="#fff"
               />
               <Text style={styles.viewToggleBtnText}>
@@ -1312,10 +1431,7 @@ export default function CalendarScreen() {
         </ScrollView>
       )}
 
-      {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={() => openAddModal({})} activeOpacity={0.85}>
-        <Ionicons name="add" size={32} color="#fff" />
-      </TouchableOpacity>
+      {/* FAB removed — Add Event button moved to header */}
 
       {/* Modals */}
       <AddEventModal
@@ -1895,22 +2011,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 28,
-    right: 20,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
+  // Header add button (replaced FAB)
+  headerAddBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)',
   },
 
   // Empty state
