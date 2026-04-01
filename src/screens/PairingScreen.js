@@ -124,7 +124,7 @@ function SeniorPairingView({ onSkip }) {
 }
 
 // ── Family View: Enter pairing code ───────────────────────────────────────
-function FamilyPairingView({ onSkip, onSuccess }) {
+function FamilyPairingView({ onSkip, onSuccess, onNoCode }) {
   const { firebaseUser } = useApp();
   const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -234,8 +234,9 @@ function FamilyPairingView({ onSkip, onSuccess }) {
         }
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={onSkip} style={styles.skipBtn}>
-        <Text style={styles.skipText}>Skip for Now</Text>
+      <TouchableOpacity onPress={onNoCode || onSkip} style={styles.noCodeBtn}>
+        <Ionicons name="card-outline" size={18} color={COLORS.primary} style={{ marginRight: 6 }} />
+        <Text style={styles.noCodeText}>I don't have a code — Subscribe instead</Text>
       </TouchableOpacity>
     </View>
   );
@@ -264,11 +265,41 @@ function SuccessView({ connectedName, onContinue }) {
   );
 }
 
+// ── "Have a code?" choice screen ──────────────────────────────────────────
+function CodeChoiceView({ onHaveCode, onNoCode }) {
+  return (
+    <View style={styles.pairingContent}>
+      <View style={styles.iconCircle}>
+        <Text style={{ fontSize: 48 }}>🔗</Text>
+      </View>
+      <Text style={styles.pairingTitle}>Connect with Family</Text>
+      <Text style={styles.pairingSubtitle}>
+        Do you have a pairing code from an Independent Living user?
+      </Text>
+
+      <TouchableOpacity style={[styles.primaryBtn, { flexDirection: 'row' }]} onPress={onHaveCode} activeOpacity={0.85}>
+        <Ionicons name="key-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+        <Text style={styles.primaryBtnText}>Yes, I have a code</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.secondaryBtn} onPress={onNoCode} activeOpacity={0.85}>
+        <Ionicons name="card-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+        <Text style={styles.secondaryBtnText}>No code — Subscribe to get started</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.codeHintText} style={{ marginTop: 16, textAlign: 'center', color: COLORS.textMuted, fontSize: 13 }}>
+        A pairing code is shared by the Independent user from their Settings screen
+      </Text>
+    </View>
+  );
+}
+
 // ── Main Screen ────────────────────────────────────────────────────────────
 export default function PairingScreen({ navigation, route }) {
   const { role, setRole, firebaseUser } = useApp();
   const [connectedName, setConnectedName] = useState(null);
   const [pendingRole, setPendingRole] = useState(role);
+  const [familyStep, setFamilyStep] = useState('choice'); // 'choice' | 'enter'
 
   // Read pending role from AsyncStorage (set during signup before role is committed)
   useEffect(() => {
@@ -340,8 +371,16 @@ export default function PairingScreen({ navigation, route }) {
                 <SuccessView connectedName={connectedName} onContinue={handleContinue} />
               ) : isSenior ? (
                 <SeniorPairingView onSkip={handleSkip} />
+              ) : familyStep === 'choice' ? (
+                <CodeChoiceView
+                  onHaveCode={() => setFamilyStep('enter')}
+                  onNoCode={handleSkip}
+                />
               ) : (
-                <FamilyPairingView onSkip={handleSkip} onSuccess={handleSuccess} />
+                <FamilyPairingView
+                  onSkip={() => setFamilyStep('choice')}
+                  onSuccess={handleSuccess}
+                />
               )}
 
               <Text style={styles.copyright}>© 2026 Theory Solutions LLC</Text>
@@ -528,6 +567,23 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   btnDisabled: { opacity: 0.6 },
+  secondaryBtn: {
+    width: '100%',
+    minHeight: 56,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginTop: 12,
+  },
+  secondaryBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.primary,
+  },
   primaryBtnText: {
     fontSize: 18,
     fontWeight: '800',
@@ -560,6 +616,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textMuted,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  noCodeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight,
+  },
+  noCodeText: {
+    fontSize: 15,
+    color: COLORS.primary,
+    fontWeight: '700',
     textAlign: 'center',
   },
 

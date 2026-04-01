@@ -44,25 +44,8 @@ function dateLabel(key) {
   return key;
 }
 
-// Demo events — shown until user adds real ones
-const _demoToday = new Date();
-const _nextWeekDemo = new Date(_demoToday); _nextWeekDemo.setDate(_demoToday.getDate() + 5);
-const _nextWeekDemoStr = _nextWeekDemo.toISOString().split('T')[0];
-
-const MOCK_EVENTS = [
-  {
-    id: 'demo-1',
-    title: 'Dentist Appointment',
-    date: _nextWeekDemoStr,
-    time: '10:00 AM',
-    category: 'appointment',
-    isPrivate: false,
-    color: '#7C3AED',
-    location: 'Tucson Dental Care',
-    reminder: '1 day',
-    _isDemo: true,
-  },
-];
+// No mock events — calendar starts empty, users add their own
+const MOCK_EVENTS = [];
 
 // ─── Category definitions ────────────────────────────────────────────────────
 
@@ -1294,15 +1277,6 @@ export default function CalendarScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={{ fontSize: 20 }}>🎤</Text>
-            </TouchableOpacity>
-
-            {/* Scanner */}
-            <TouchableOpacity
-              style={styles.headerIconBtn}
-              onPress={() => setShowScanModal(true)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="camera" size={22} color="#fff" />
             </TouchableOpacity>
 
             {/* PDF Export */}
