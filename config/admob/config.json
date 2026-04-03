@@ -1,7 +1,0 @@
-{
-  "appId": "ca-app-pub-5271274354976052~1008901934",
-  "bannerAdUnitId": "ca-app-pub-5271274354976052/TEST-BANNER",
-  "interstitialAdUnitId": "ca-app-pub-5271274354976052/TEST-INTERSTITIAL",
-  "rewardedAdUnitId": "ca-app-pub-5271274354976052/TEST-REWARDED",
-  "note": "Replace TEST-* with real ad unit IDs from AdMob console after creating ad units"
-}
