@@ -3,338 +3,624 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="In-dependent Living - Mobile app helping seniors live independently while staying connected with family caregivers.">
   <title>In-dependent Living | Live Independently. Stay Connected.</title>
+  <meta name="description" content="The mobile app that helps seniors live independently while keeping their family connected and informed.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
     :root {
-      --primary: #1e3a5f;
-      --accent: #2d5a87;
-      --light: #f0f4f8;
+      --primary: #0F4C81;
+      --primary-dark: #0a3254;
+      --accent: #3B82F6;
       --white: #ffffff;
-      --text: #333333;
-      --text-light: #666666;
-      --green: #22c55e;
+      --off-white: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --green: #10B981;
+      --green-light: #D1FAE5;
+    }
+    
+    html {
+      scroll-behavior: smooth;
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      background: var(--light);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--text);
+      background: var(--white);
       line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--gray-200);
+    }
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--primary);
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    
+    .nav-links a {
+      text-decoration: none;
+      color: var(--gray-600);
+      font-weight: 500;
+      font-size: 15px;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+    
+    .nav-cta {
+      background: var(--primary);
+      color: var(--white) !important;
+      padding: 10px 20px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .nav-cta:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
     }
     
     /* Hero Section */
     .hero {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 40px 20px;
       position: relative;
       overflow: hidden;
+      padding: 120px 24px 80px;
     }
     
-    .hero::before {
-      content: '';
+    .hero-bg {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       background: 
-        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
-      pointer-events: none;
+        radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(15, 76, 129, 0.08) 0%, transparent 50%),
+        linear-gradient(180deg, var(--off-white) 0%, var(--white) 100%);
+    }
+    
+    .hero-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(circle at 1px 1px, var(--gray-200) 1px, transparent 0);
+      background-size: 40px 40px;
+      opacity: 0.5;
     }
     
     .hero-content {
       position: relative;
       z-index: 1;
-      max-width: 700px;
+      max-width: 900px;
+      text-align: center;
     }
     
-    .logo {
-      font-size: 80px;
-      margin-bottom: 20px;
-      animation: pulse 2s ease-in-out infinite;
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green-light);
+      color: #065F46;
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 32px;
+      animation: fadeInUp 0.6s ease-out;
     }
     
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
+    .hero-badge span {
+      width: 8px;
+      height: 8px;
+      background: #10B981;
+      border-radius: 50%;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     
     .hero h1 {
-      color: var(--white);
-      font-size: clamp(32px, 6vw, 52px);
-      font-weight: 700;
-      margin-bottom: 16px;
-      letter-spacing: -1px;
+      font-size: clamp(40px, 8vw, 72px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      color: var(--primary);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease-out 0.1s backwards;
     }
     
-    .hero .tagline {
-      color: rgba(255,255,255,0.9);
-      font-size: clamp(18px, 3vw, 24px);
-      margin-bottom: 40px;
-      font-weight: 300;
+    .hero p {
+      font-size: clamp(18px, 2.5vw, 22px);
+      color: var(--gray-500);
+      max-width: 600px;
+      margin: 0 auto 40px;
+      animation: fadeInUp 0.6s ease-out 0.2s backwards;
     }
     
-    .cta-group {
+    .hero-cta {
       display: flex;
       gap: 16px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-bottom: 60px;
+      animation: fadeInUp 0.6s ease-out 0.3s backwards;
     }
     
     .btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 18px 36px;
+      gap: 8px;
+      padding: 16px 32px;
       border-radius: 12px;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
       text-decoration: none;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
       border: none;
     }
     
     .btn-primary {
-      background: var(--white);
-      color: var(--primary);
+      background: var(--primary);
+      color: var(--white);
+      box-shadow: 0 4px 14px rgba(15, 76, 129, 0.3);
     }
     
     .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(15, 76, 129, 0.4);
     }
     
     .btn-secondary {
-      background: transparent;
-      color: var(--white);
-      border: 2px solid rgba(255,255,255,0.5);
+      background: var(--white);
+      color: var(--text);
+      border: 2px solid var(--gray-200);
     }
     
     .btn-secondary:hover {
-      background: rgba(255,255,255,0.1);
-      border-color: var(--white);
+      border-color: var(--primary);
+      color: var(--primary);
     }
     
-    /* Features Grid */
+    /* Features Section */
     .features {
-      padding: 80px 20px;
-      background: var(--white);
+      padding: 120px 24px;
+      background: var(--off-white);
     }
     
     .container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
     }
     
-    .section-title {
+    .section-header {
       text-align: center;
-      margin-bottom: 60px;
+      margin-bottom: 80px;
     }
     
-    .section-title h2 {
-      color: var(--primary);
-      font-size: clamp(28px, 4vw, 36px);
+    .section-label {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
       margin-bottom: 16px;
     }
     
-    .section-title p {
-      color: var(--text-light);
+    .section-title {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+    
+    .section-subtitle {
       font-size: 18px;
+      color: var(--gray-500);
+      max-width: 500px;
+      margin: 0 auto;
     }
     
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
     }
     
     .feature-card {
-      background: var(--light);
-      padding: 30px;
-      border-radius: 16px;
-      text-align: center;
-      transition: all 0.3s ease;
+      background: var(--white);
+      padding: 40px 32px;
+      border-radius: 20px;
+      border: 1px solid var(--gray-200);
+      transition: all 0.3s;
     }
     
     .feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      border-color: transparent;
     }
     
     .feature-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
+      width: 56px;
+      height: 56px;
+      background: var(--off-white);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 24px;
     }
     
     .feature-card h3 {
-      color: var(--primary);
       font-size: 20px;
+      font-weight: 600;
       margin-bottom: 12px;
+      color: var(--text);
     }
     
     .feature-card p {
-      color: var(--text-light);
+      color: var(--gray-500);
       font-size: 15px;
     }
     
     /* How It Works */
     .how-it-works {
-      padding: 80px 20px;
-      background: var(--light);
+      padding: 120px 24px;
+      background: var(--white);
     }
     
-    .steps {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 40px;
     }
     
     .step {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      max-width: 400px;
+      text-align: center;
     }
     
     .step-number {
-      width: 48px;
-      height: 48px;
-      background: var(--primary);
-      color: var(--white);
-      border-radius: 50%;
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 24px;
       font-weight: 700;
-      font-size: 20px;
-      flex-shrink: 0;
+      color: var(--white);
+      margin: 0 auto 24px;
     }
     
-    .step-text h4 {
-      color: var(--primary);
-      margin-bottom: 4px;
+    .step h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
     }
     
-    .step-text p {
-      color: var(--text-light);
+    .step p {
+      color: var(--gray-500);
       font-size: 14px;
     }
     
     /* Pricing */
     .pricing {
-      padding: 80px 20px;
-      background: var(--white);
+      padding: 120px 24px;
+      background: var(--off-white);
     }
     
     .pricing-grid {
       display: flex;
       justify-content: center;
-      gap: 30px;
+      gap: 24px;
       flex-wrap: wrap;
+      margin-top: 48px;
     }
     
     .price-card {
-      background: var(--light);
-      padding: 40px;
-      border-radius: 16px;
+      background: var(--white);
+      padding: 48px 40px;
+      border-radius: 24px;
+      border: 1px solid var(--gray-200);
       text-align: center;
-      max-width: 350px;
+      max-width: 380px;
       flex: 1;
-      min-width: 280px;
+      min-width: 300px;
     }
     
     .price-card.featured {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: var(--white);
+      border: none;
+      transform: scale(1.05);
     }
     
     .price-card.featured .price {
       color: var(--white);
     }
     
+    .price-card.featured .price span {
+      color: rgba(255,255,255,0.8);
+    }
+    
     .price-card.featured p {
       color: rgba(255,255,255,0.8);
     }
     
-    .price {
-      font-size: 48px;
-      font-weight: 700;
-      color: var(--primary);
-      margin: 20px 0;
+    .price-card h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
     }
     
-    .price span {
-      font-size: 18px;
+    .price-card .price {
+      font-size: 56px;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 24px 0;
+    }
+    
+    .price-card .price span {
+      font-size: 16px;
       font-weight: 400;
+      color: var(--gray-500);
     }
     
     .price-card ul {
       list-style: none;
       text-align: left;
-      margin: 20px 0;
+      margin: 24px 0;
     }
     
     .price-card li {
-      padding: 8px 0;
+      padding: 12px 0;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      font-size: 15px;
+      border-bottom: 1px solid var(--gray-100);
     }
     
-    .price-card li::before {
-      content: '✓';
-      color: var(--green);
-      font-weight: bold;
+    .price-card li:last-child {
+      border-bottom: none;
+    }
+    
+    .price-card.featured li {
+      border-color: rgba(255,255,255,0.1);
+    }
+    
+    .check {
+      width: 20px;
+      height: 20px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    
+    .price-card .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .price-card.featured .btn {
+      background: var(--white);
+      color: var(--primary);
+    }
+    
+    .trial-note {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: var(--gray-500);
     }
     
     /* Footer */
     footer {
-      background: var(--primary);
+      background: var(--text);
       color: var(--white);
-      padding: 40px 20px;
+      padding: 80px 24px 40px;
+    }
+    
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+    
+    .footer-brand {
+      max-width: 300px;
+    }
+    
+    .footer-brand .logo {
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+    
+    .footer-brand p {
+      color: var(--gray-400);
+      font-size: 14px;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 60px;
+    }
+    
+    .footer-col h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .footer-col a {
+      display: block;
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 0;
+      transition: color 0.2s;
+    }
+    
+    .footer-col a:hover {
+      color: var(--white);
+    }
+    
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 60px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--gray-700);
       text-align: center;
+      color: var(--gray-500);
+      font-size: 14px;
     }
     
-    footer a {
-      color: var(--white);
-      text-decoration: underline;
-    }
-    
-    footer p {
-      opacity: 0.8;
-      margin-bottom: 8px;
-    }
-    
-    /* Mobile adjustments */
-    @media (max-width: 600px) {
-      .hero h1 { font-size: 28px; }
-      .btn { width: 100%; }
-      .features-grid { grid-template-columns: 1fr; }
+    /* Mobile */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      
+      .hero {
+        padding-top: 100px;
+      }
+      
+      .hero h1 {
+        font-size: 36px;
+      }
+      
+      .pricing-grid {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .price-card.featured {
+        transform: none;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <div class="logo-icon">💙</div>
+        <span class="logo-text">In-dependent Living</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="terms.html">Terms</a>
+        <a href="privacy-policy.html">Privacy</a>
+        <a href="https://apps.apple.com/app/id6761432570" class="nav-cta">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
   <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-pattern"></div>
     <div class="hero-content">
-      <div class="logo">💙</div>
-      <h1>In-dependent Living</h1>
-      <p class="tagline">Live independently. Stay connected with the people who care about you.</p>
-      
-      <div class="cta-group">
-        <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary" target="_blank">
+      <div class="hero-badge">
+        <span></span>
+        7-Day Free Trial
+      </div>
+      <h1>Live independently.<br>Stay connected.</h1>
+      <p>The mobile app that helps seniors live confidently while keeping their family informed and involved in their care.</p>
+      <div class="hero-cta">
+        <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary">
           📱 Download on App Store
         </a>
         <a href="#how-it-works" class="btn btn-secondary">
@@ -344,24 +630,26 @@
     </div>
   </section>
 
+  <!-- Features -->
   <section class="features" id="features">
     <div class="container">
-      <div class="section-title">
-        <h2>Everything You Need</h2>
-        <p>A complete solution for seniors and their families</p>
+      <div class="section-header">
+        <div class="section-label">Features</div>
+        <h2 class="section-title">Everything you need</h2>
+        <p class="section-subtitle">A complete solution for seniors and the people who care about them</p>
       </div>
       
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon">💊</div>
           <h3>Medication Tracking</h3>
-          <p>Scan prescriptions, set reminders, and track doses. Your family stays informed about your medication schedule.</p>
+          <p>Scan prescriptions, set reminders, and track doses. Family members stay informed about medication schedules automatically.</p>
         </div>
         
         <div class="feature-card">
           <div class="feature-icon">👥</div>
           <h3>Family Connectivity</h3>
-          <p>Share your wellness with family members. They see your activity, medications, and calendar — on your terms.</p>
+          <p>Share your wellness with family. They see your activity, medications, and calendar — on your terms, privately.</p>
         </div>
         
         <div class="feature-card">
@@ -385,99 +673,123 @@
         <div class="feature-card">
           <div class="feature-icon">🔒</div>
           <h3>Privacy First</h3>
-          <p>Your health data stays private. HIPAA-exempt design with device-only and encrypted cloud storage options.</p>
+          <p>Your health data stays private. HIPAA-exempt design with secure encrypted cloud storage.</p>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- How It Works -->
   <section class="how-it-works" id="how-it-works">
     <div class="container">
-      <div class="section-title">
-        <h2>How It Works</h2>
-        <p>Get started in minutes</p>
+      <div class="section-header">
+        <div class="section-label">How It Works</div>
+        <h2 class="section-title">Get started in minutes</h2>
+        <p class="section-subtitle">Four simple steps to connected care</p>
       </div>
       
-      <div class="steps">
+      <div class="steps-grid">
         <div class="step">
           <div class="step-number">1</div>
-          <div class="step-text">
-            <h4>Download the App</h4>
-            <p>Get it from the App Store or Google Play</p>
-          </div>
+          <h3>Download</h3>
+          <p>Get the app from the App Store or Google Play</p>
         </div>
         
         <div class="step">
           <div class="step-number">2</div>
-          <div class="step-text">
-            <h4>Create Your Account</h4>
-            <p>Sign up with your email and try free for 7 days</p>
-          </div>
+          <h3>Create Account</h3>
+          <p>Sign up with your email — try free for 7 days</p>
         </div>
         
         <div class="step">
           <div class="step-number">3</div>
-          <div class="step-text">
-            <h4>Connect with Family</h4>
-            <p>Share a link or code with your loved ones</p>
-          </div>
+          <h3>Connect Family</h3>
+          <p>Share a link or code with your loved ones</p>
         </div>
         
         <div class="step">
           <div class="step-number">4</div>
-          <div class="step-text">
-            <h4>Stay Independent</h4>
-            <p>Live confidently while your family stays informed</p>
-          </div>
+          <h3>Stay Independent</h3>
+          <p>Live confidently while family stays informed</p>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- Pricing -->
   <section class="pricing" id="pricing">
     <div class="container">
-      <div class="section-title">
-        <h2>Simple Pricing</h2>
-        <p>Start free, pay only when you love it</p>
+      <div class="section-header">
+        <div class="section-label">Pricing</div>
+        <h2 class="section-title">Simple, transparent pricing</h2>
+        <p class="section-subtitle">Start free, pay only when you love it</p>
       </div>
       
       <div class="pricing-grid">
         <div class="price-card">
           <h3>Monthly</h3>
-          <div class="price">$24.99<span>/mo</span></div>
+          <div class="price">$24.99<span>/month</span></div>
           <ul>
-            <li>All features included</li>
-            <li>Unlimited family connections</li>
-            <li>Cancel anytime</li>
+            <li><span class="check">✓</span> All features included</li>
+            <li><span class="check">✓</span> Unlimited family connections</li>
+            <li><span class="check">✓</span> 24/7 support</li>
+            <li><span class="check">✓</span> Cancel anytime</li>
           </ul>
-          <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary" target="_blank">Get Started</a>
+          <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary">Get Started</a>
         </div>
         
         <div class="price-card featured">
           <h3>Annual</h3>
-          <div class="price">$199<span>/yr</span></div>
+          <div class="price">$199<span>/year</span></div>
           <p>Save 33%</p>
           <ul>
-            <li>All features included</li>
-            <li>Unlimited family connections</li>
-            <li>Cancel anytime</li>
+            <li><span class="check">✓</span> All features included</li>
+            <li><span class="check">✓</span> Unlimited family connections</li>
+            <li><span class="check">✓</span> 24/7 support</li>
+            <li><span class="check">✓</span> Cancel anytime</li>
           </ul>
-          <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary" target="_blank" style="background:var(--primary);color:var(--white)">Get Started</a>
+          <a href="https://apps.apple.com/app/id6761432570" class="btn">Get Started</a>
         </div>
       </div>
       
-      <p style="text-align:center;margin-top:30px;color:var(--text-light);font-size:14px;">
-        🔒 No commitment. Cancel in your device's app store settings at least 24 hours before renewal.
-      </p>
+      <p class="trial-note">🔒 No commitment. Cancel in your device's app store settings at least 24 hours before renewal.</p>
     </div>
   </section>
 
+  <!-- Footer -->
   <footer>
-    <div class="container">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <a href="/" class="logo">
+          <div class="logo-icon">💙</div>
+          <span class="logo-text">In-dependent Living</span>
+        </a>
+        <p>Helping seniors live independently while staying connected with the people who care about them.</p>
+      </div>
+      
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>App</h4>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="https://apps.apple.com/app/id6761432570">Download</a>
+        </div>
+        
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="terms.html">Terms of Service</a>
+          <a href="privacy-policy.html">Privacy Policy</a>
+        </div>
+        
+        <div class="footer-col">
+          <h4>Company</h4>
+          <a href="mailto:support@theorysolutions.com">Contact</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-bottom">
       <p>© 2026 Theory Solutions LLC. All rights reserved.</p>
-      <p>
-        <a href="terms.html">Terms of Service</a> • <a href="privacy-policy.html">Privacy Policy</a>
-      </p>
     </div>
   </footer>
 </body>
