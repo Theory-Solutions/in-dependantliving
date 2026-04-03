@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="In-dependent Living - Mobile app helping seniors live independently while staying connected with family caregivers.">
+  <title>In-dependent Living | Live Independently. Stay Connected.</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --primary: #1e3a5f;
+      --accent: #2d5a87;
+      --light: #f0f4f8;
+      --white: #ffffff;
+      --text: #333333;
+      --text-light: #666666;
+      --green: #22c55e;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--light);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+    }
+    
+    .logo {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .hero h1 {
+      color: var(--white);
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+    
+    .hero .tagline {
+      color: rgba(255,255,255,0.9);
+      font-size: clamp(18px, 3vw, 24px);
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+    
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+    }
+    
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 36px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: var(--white);
+      color: var(--primary);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      color: var(--white);
+      border: 2px solid rgba(255,255,255,0.5);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: var(--white);
+    }
+    
+    /* Features Grid */
+    .features {
+      padding: 80px 20px;
+      background: var(--white);
+    }
+    
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    
+    .section-title {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    
+    .section-title h2 {
+      color: var(--primary);
+      font-size: clamp(28px, 4vw, 36px);
+      margin-bottom: 16px;
+    }
+    
+    .section-title p {
+      color: var(--text-light);
+      font-size: 18px;
+    }
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+    }
+    
+    .feature-card {
+      background: var(--light);
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .feature-card h3 {
+      color: var(--primary);
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    
+    .feature-card p {
+      color: var(--text-light);
+      font-size: 15px;
+    }
+    
+    /* How It Works */
+    .how-it-works {
+      padding: 80px 20px;
+      background: var(--light);
+    }
+    
+    .steps {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 40px;
+    }
+    
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 400px;
+    }
+    
+    .step-number {
+      width: 48px;
+      height: 48px;
+      background: var(--primary);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .step-text h4 {
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    
+    .step-text p {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    
+    /* Pricing */
+    .pricing {
+      padding: 80px 20px;
+      background: var(--white);
+    }
+    
+    .pricing-grid {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .price-card {
+      background: var(--light);
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 350px;
+      flex: 1;
+      min-width: 280px;
+    }
+    
+    .price-card.featured {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: var(--white);
+    }
+    
+    .price-card.featured .price {
+      color: var(--white);
+    }
+    
+    .price-card.featured p {
+      color: rgba(255,255,255,0.8);
+    }
+    
+    .price {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 20px 0;
+    }
+    
+    .price span {
+      font-size: 18px;
+      font-weight: 400;
+    }
+    
+    .price-card ul {
+      list-style: none;
+      text-align: left;
+      margin: 20px 0;
+    }
+    
+    .price-card li {
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .price-card li::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: bold;
+    }
+    
+    /* Footer */
+    footer {
+      background: var(--primary);
+      color: var(--white);
+      padding: 40px 20px;
+      text-align: center;
+    }
+    
+    footer a {
+      color: var(--white);
+      text-decoration: underline;
+    }
+    
+    footer p {
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+    
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 28px; }
+      .btn { width: 100%; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-content">
+      <div class="logo">💙</div>
+      <h1>In-dependent Living</h1>
+      <p class="tagline">Live independently. Stay connected with the people who care about you.</p>
+      
+      <div class="cta-group">
+        <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary" target="_blank">
+          📱 Download on App Store
+        </a>
+        <a href="#how-it-works" class="btn btn-secondary">
+          Learn More
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-title">
+        <h2>Everything You Need</h2>
+        <p>A complete solution for seniors and their families</p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">💊</div>
+          <h3>Medication Tracking</h3>
+          <p>Scan prescriptions, set reminders, and track doses. Your family stays informed about your medication schedule.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <h3>Family Connectivity</h3>
+          <p>Share your wellness with family members. They see your activity, medications, and calendar — on your terms.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">📅</div>
+          <h3>Smart Calendar</h3>
+          <p>Track appointments, activities, and reminders. Easy voice entry makes adding events simple.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🆘</div>
+          <h3>One-Tap Emergency</h3>
+          <p>SOS button calls 911 or family instantly. Your location is shared automatically with emergency contacts.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">⌚</div>
+          <h3>Activity Monitoring</h3>
+          <p>Track steps, stand hours, and flights climbed. Connect Apple Watch or Fitbit for automatic sync.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Privacy First</h3>
+          <p>Your health data stays private. HIPAA-exempt design with device-only and encrypted cloud storage options.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-title">
+        <h2>How It Works</h2>
+        <p>Get started in minutes</p>
+      </div>
+      
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-text">
+            <h4>Download the App</h4>
+            <p>Get it from the App Store or Google Play</p>
+          </div>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-text">
+            <h4>Create Your Account</h4>
+            <p>Sign up with your email and try free for 7 days</p>
+          </div>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-text">
+            <h4>Connect with Family</h4>
+            <p>Share a link or code with your loved ones</p>
+          </div>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-text">
+            <h4>Stay Independent</h4>
+            <p>Live confidently while your family stays informed</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-title">
+        <h2>Simple Pricing</h2>
+        <p>Start free, pay only when you love it</p>
+      </div>
+      
+      <div class="pricing-grid">
+        <div class="price-card">
+          <h3>Monthly</h3>
+          <div class="price">$24.99<span>/mo</span></div>
+          <ul>
+            <li>All features included</li>
+            <li>Unlimited family connections</li>
+            <li>Cancel anytime</li>
+          </ul>
+          <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary" target="_blank">Get Started</a>
+        </div>
+        
+        <div class="price-card featured">
+          <h3>Annual</h3>
+          <div class="price">$199<span>/yr</span></div>
+          <p>Save 33%</p>
+          <ul>
+            <li>All features included</li>
+            <li>Unlimited family connections</li>
+            <li>Cancel anytime</li>
+          </ul>
+          <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary" target="_blank" style="background:var(--primary);color:var(--white)">Get Started</a>
+        </div>
+      </div>
+      
+      <p style="text-align:center;margin-top:30px;color:var(--text-light);font-size:14px;">
+        🔒 No commitment. Cancel in your device's app store settings at least 24 hours before renewal.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>© 2026 Theory Solutions LLC. All rights reserved.</p>
+      <p>
+        <a href="terms.html">Terms of Service</a> • <a href="privacy-policy.html">Privacy Policy</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
