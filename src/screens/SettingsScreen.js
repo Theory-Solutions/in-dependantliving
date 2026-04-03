@@ -9,6 +9,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  Clipboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -227,6 +228,19 @@ export default function SettingsScreen({ navigation }) {
                 <Text style={styles.generateCodeBtnText}>
                   {generatingCode ? 'Generating...' : 'Generate New Code'}
                 </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.generateCodeBtn, { marginTop: 12, backgroundColor: '#22c55e' }]}
+                onPress={async () => {
+                  if (!userPairingCode) return;
+                  const link = `https://in-dependentliving.com/connect/${userPairingCode}`;
+                  Clipboard.setString(link);
+                  Alert.alert('Link Copied!', 'Share this link with your family member:\n\n' + link);
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="link-outline" size={18} color="#fff" />
+                <Text style={styles.generateCodeBtnText}>Share Connection Link</Text>
               </TouchableOpacity>
             </View>
 

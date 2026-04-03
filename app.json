@@ -14,6 +14,13 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["independentliving"]
+          }
+        ],
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleDisplayName": "In-dependent",
         "NSCameraUsageDescription": "In-dependent Living uses the camera to scan prescription bottle labels and barcodes so your medications can be added automatically.",
         "NSMicrophoneUsageDescription": "Microphone access is required by the camera system.",
         "NSPhotoLibraryUsageDescription": "In-dependent Living uses your photo library so caregivers can upload a profile photo for their loved one."
@@ -27,6 +34,18 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "independentliving"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ],
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",

@@ -187,6 +187,26 @@ function FamilyPairingView({ onSkip, onSuccess, onNoCode }) {
     }
   };
 
+  // Auto-connect from deep link (URL-based pairing)
+  const handleAutoConnect = async (code) => {
+    if (!firebaseUser) {
+      // Store code and wait for auth to complete
+      await AsyncStorage.setItem('pendingConnectCode', code);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await connectWithCode(firebaseUser.uid, code);
+      onSuccess(result.seniorName);
+      await AsyncStorage.removeItem('pendingConnectCode');
+    } catch (err) {
+      setError(err.message || 'Connection failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.pairingContent}>
       <View style={styles.iconCircle}>
@@ -301,11 +321,20 @@ export default function PairingScreen({ navigation, route }) {
   const [pendingRole, setPendingRole] = useState(role);
   const [familyStep, setFamilyStep] = useState('choice'); // 'choice' | 'enter'
 
-  // Read pending role from AsyncStorage (set during signup before role is committed)
+  // Read pending role and connect code from AsyncStorage
   useEffect(() => {
     (async () => {
       const stored = await AsyncStorage.getItem('pendingRole');
       if (stored) setPendingRole(stored);
+      
+      // Check for pending connect code from deep link
+      const connectCode = await AsyncStorage.getItem('pendingConnectCode');
+      if (connectCode) {
+        setDigits(connectCode.split(''));
+        setFamilyStep('enter');
+        // Auto-submit after a brief delay
+        setTimeout(() => handleAutoConnect(connectCode), 500);
+      }
     })();
   }, []);
 

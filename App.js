@@ -8,14 +8,15 @@
  * via any medium, is strictly prohibited.
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+import { NavigationContainer, useNavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import * as LinkingExpo from 'expo-linking';
 
 import { AppProvider, useApp } from './src/context/AppContext';
 import { COLORS } from './src/constants/colors';
@@ -195,12 +196,39 @@ function AppTabs() {
 function RootNavigator() {
   const { role, firebaseUser, isLoading, setRole } = useApp();
   const [onboardingComplete, setOnboardingComplete] = useState(null); // null = checking
+  const navRef = useRef(null);
 
   // Check onboarding flag from AsyncStorage
   useEffect(() => {
     AsyncStorage.getItem('onboardingComplete').then(val => {
       setOnboardingComplete(val === 'true');
     }).catch(() => setOnboardingComplete(false));
+  }, []);
+
+  // Handle deep links (e.g., independentliving://connect/ABC123)
+  useEffect(() => {
+    const handleDeepLink = (event) => {
+      const url = event.url;
+      if (url && url.includes('/connect/')) {
+        const code = url.split('/connect/')[1]?.split('?')[0];
+        if (code && navRef.current) {
+          // Store the connect code and navigate to pairing
+          AsyncStorage.setItem('pendingConnectCode', code);
+          navRef.current.navigate('Pairing', { connectCode: code });
+        }
+      }
+    };
+
+    // Check initial URL
+    Linking.getInitialURL().then(url => {
+      if (url && url.includes('/connect/')) {
+        const code = url.split('/connect/')[1]?.split('?')[0];
+        if (code) AsyncStorage.setItem('pendingConnectCode', code);
+      }
+    }).catch(() => {});
+
+    const sub = Linking.addEventListener('url', handleDeepLink);
+    return () => sub.remove();
   }, []);
 
   // Show splash/loading while auth state or onboarding flag resolves
