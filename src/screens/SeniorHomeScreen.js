@@ -133,6 +133,10 @@ export default function SeniorHomeScreen({ navigation }) {
   };
 
   const handleSaveContact = async () => {
+    if (contacts.length >= 5) {
+      Alert.alert('Contact Limit Reached', 'You can add up to 5 contacts. Remove one to add another.');
+      return;
+    }
     if (!newContact.name.trim()) {
       Alert.alert('Missing Name', 'Please enter a name for this contact.');
       return;
@@ -187,12 +191,33 @@ export default function SeniorHomeScreen({ navigation }) {
   const stepsPct = Math.min((realSteps / STEP_GOAL) * 100, 100);
   const firstName = firebaseUser?.displayName?.split(' ')[0] || 'Friend';
 
-  // Get today's calendar events from Firebase — recomputes whenever calendarEvents changes
+  // Get calendar data for Today / Tomorrow / This Week
   const todayStr = now.toISOString().split('T')[0];
   const todayEvents = (calendarEvents || [])
     .filter(e => e.date === todayStr)
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
     .slice(0, 4); // show max 4 on home screen
+
+  const tomorrowDate = new Date(now);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
+  const tomorrowEvents = (calendarEvents || [])
+    .filter(e => e.date === tomorrowStr)
+    .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+    .slice(0, 3);
+
+  // Next 5 days (day after tomorrow through +5)
+  const weekDays = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i + 2);
+    const ds = d.toISOString().split('T')[0];
+    const count = (calendarEvents || []).filter(e => e.date === ds).length;
+    return {
+      dateStr: ds,
+      label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }),
+      count,
+    };
+  });
 
   // No mock fallback — show empty state when no real events
   const scheduleToShow = todayEvents;
@@ -271,12 +296,58 @@ export default function SeniorHomeScreen({ navigation }) {
                 <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
               </TouchableOpacity>
             )) : (
-              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <View style={{ paddingVertical: 12, alignItems: 'center' }}>
                 <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 }}>
                   No events today — tap + in Calendar to add one
                 </Text>
               </View>
             )}
+
+            {/* ── Tomorrow ── */}
+            <View style={styles.calSubHeader}>
+              <Text style={styles.calSubTitle}>Tomorrow</Text>
+            </View>
+            {tomorrowEvents.length > 0 ? tomorrowEvents.map((event, i) => (
+              <TouchableOpacity
+                key={`tmr-${i}`}
+                style={[styles.scheduleRow, i === tomorrowEvents.length - 1 && styles.scheduleRowLast]}
+                onPress={() => goToTab('Calendar')}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.scheduleTime}>{event.time}</Text>
+                <View style={[styles.scheduleDot, { backgroundColor: SCHEDULE_COLORS[event.type] || COLORS.primary }]} />
+                <View style={styles.scheduleInfo}>
+                  <Text style={styles.scheduleLabel}>{event.icon}  {event.label}</Text>
+                  {event.detail && <Text style={styles.scheduleDetail}>{event.detail}</Text>}
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            )) : (
+              <Text style={styles.calEmptyText}>Nothing scheduled for tomorrow</Text>
+            )}
+
+            {/* ── This Week ── */}
+            <View style={styles.calSubHeader}>
+              <Text style={styles.calSubTitle}>This Week</Text>
+            </View>
+            <View style={styles.weekRow}>
+              {weekDays.map((day, i) => (
+                <TouchableOpacity
+                  key={`wk-${i}`}
+                  style={styles.weekDayCell}
+                  onPress={() => goToTab('Calendar')}
+                  activeOpacity={0.75}
+                >
+                  <Text style={styles.weekDayLabel}>{day.label.split(',')[0]}</Text>
+                  <View style={[styles.weekDayBadge, day.count > 0 && styles.weekDayBadgeActive]}>
+                    <Text style={[styles.weekDayCount, day.count > 0 && styles.weekDayCountActive]}>
+                      {day.count}
+                    </Text>
+                  </View>
+                  <Text style={styles.weekDayDate}>{day.label.split(',')[1]?.trim()}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
           {/* ── 2. TODAY'S STEPS ── */}
@@ -285,28 +356,22 @@ export default function SeniorHomeScreen({ navigation }) {
             activeOpacity={0.85}
             onPress={() => goToTab('Apps')}
             accessibilityRole="button"
-            accessibilityLabel="Today's steps — tap to open Apps"
+            accessibilityLabel="Today's steps — tap to open Activity"
           >
             <View style={styles.cardHeader}>
               <Text style={styles.cardIcon}>👟</Text>
               <Text style={styles.cardTitle}>Today's Steps</Text>
-              <Text style={styles.cardAction}>View Apps →</Text>
+              <Text style={styles.cardAction}>View Activity →</Text>
             </View>
             {stepsAvailable && realSteps > 0 ? (
               <>
                 <Text style={styles.stepsCount}>{realSteps.toLocaleString()}</Text>
-                <Text style={styles.stepsGoal}>Daily goal: {STEP_GOAL.toLocaleString()} steps</Text>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${stepsPct}%` }]} />
-                </View>
-                <View style={styles.stepsBottomRow}>
-                  <Text style={styles.stepsPct}>{Math.round(stepsPct)}% of goal</Text>
-                  <Text style={styles.stepsRemaining}>{(STEP_GOAL - realSteps).toLocaleString()} steps to go</Text>
-                </View>
+                <Text style={styles.stepsGoal}>steps today</Text>
               </>
             ) : (
               <View style={{ paddingVertical: 16, alignItems: 'center' }}>
                 <Text style={styles.stepsCount}>0</Text>
+                <Text style={styles.stepsGoal}>steps today</Text>
                 {!stepsAvailable && (
                   <Text style={{ fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, marginTop: 4 }}>
                     Connect a fitness tracker to see your steps
@@ -427,7 +492,7 @@ export default function SeniorHomeScreen({ navigation }) {
                       </View>
                     </TouchableOpacity>
                   ))}
-                  {!showAddContact && (
+                  {!showAddContact && contacts.length < 5 && (
                     <TouchableOpacity
                       style={styles.addContactCard}
                       activeOpacity={0.8}
@@ -529,8 +594,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
 
   // Header
-  header: { paddingTop: 20, paddingBottom: 28, paddingHorizontal: 22 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  header: { paddingTop: 16, paddingBottom: 32, paddingHorizontal: 22 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   headerLeft: { flex: 1, paddingRight: 12 },
   greeting: { fontSize: 26, fontWeight: '800', color: '#fff', lineHeight: 32 },
   headerDate: { fontSize: 15, color: 'rgba(255,255,255,0.72)', marginTop: 4, fontWeight: '500' },
@@ -540,14 +605,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 2,
+    paddingBottom: 2,
   },
 
   // SOS button in header
   sosHeaderBtn: {
-    height: 40,
-    paddingHorizontal: 16,
-    borderRadius: 20,
+    height: 44,
+    paddingHorizontal: 20,
+    borderRadius: 22,
     backgroundColor: '#DC2626',
     alignItems: 'center',
     justifyContent: 'center',
@@ -754,6 +819,73 @@ const styles = StyleSheet.create({
   },
 
   // SOS float styles removed — button is now in header
+
+  // Calendar sub-sections (Tomorrow / This Week)
+  calSubHeader: {
+    marginTop: 16,
+    marginBottom: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.divider,
+  },
+  calSubTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  calEmptyText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+    paddingVertical: 8,
+    fontStyle: 'italic',
+  },
+  weekRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingBottom: 4,
+  },
+  weekDayCell: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  weekDayLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    marginBottom: 4,
+  },
+  weekDayBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.divider,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  weekDayBadgeActive: {
+    backgroundColor: COLORS.primary,
+  },
+  weekDayCount: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.textMuted,
+  },
+  weekDayCountActive: {
+    color: '#fff',
+  },
+  weekDayDate: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    fontWeight: '600',
+  },
 
   // I'm OK — small, bottom
   checkinBtn: {

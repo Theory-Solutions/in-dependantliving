@@ -98,6 +98,16 @@ export default function SubscriptionScreen({ navigation, onSubscribe, onSkip }) 
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
+          {/* Back / close button */}
+          {(navigation || onSkip) && (
+            <TouchableOpacity
+              style={styles.headerBackBtn}
+              onPress={() => navigation?.goBack() || onSkip?.()}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+          )}
           <View style={styles.logoContainer}>
             <View style={styles.logoCircle}>
               <Ionicons name="heart" size={36} color={COLORS.primary} />
@@ -243,6 +253,18 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     paddingHorizontal: 24,
     alignItems: 'center',
+  },
+  headerBackBtn: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   logoContainer: {
     marginBottom: 16,

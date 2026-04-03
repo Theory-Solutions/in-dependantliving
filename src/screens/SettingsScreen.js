@@ -7,15 +7,18 @@ import {
   Switch,
   StyleSheet,
   Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { COLORS } from '../constants/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { createPairingCode } from '../services/pairingService';
+import * as healthService from '../services/healthService';
 
 const THRESHOLDS = [
   { value: 2, label: '2 hours' },
@@ -32,6 +35,22 @@ export default function SettingsScreen({ navigation }) {
   const [locationSharing, setLocationSharing] = useState(settings.locationSharing !== false);
   const [userPairingCode, setUserPairingCode] = useState(null);
   const [generatingCode, setGeneratingCode] = useState(false);
+
+  // Profile section state
+  const [displayName, setDisplayName] = useState(firebaseUser?.displayName || 'User');
+  const [showEditName, setShowEditName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState('');
+
+  // Wearables state
+  const [appleWatchConnected, setAppleWatchConnected] = useState(false);
+  const [fitbitConnected, setFitbitConnected] = useState(false);
+  const [stepCountingAvailable, setStepCountingAvailable] = useState(false);
+
+  useEffect(() => {
+    healthService.isStepCountingAvailable()
+      .then(v => setStepCountingAvailable(!!v))
+      .catch(() => setStepCountingAvailable(false));
+  }, []);
 
   // Subscribe to real pairing code from Firebase
   useEffect(() => {
@@ -102,6 +121,77 @@ export default function SettingsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+
+        {/* ── PROFILE SECTION ── */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileAvatarWrap}>
+            <Text style={styles.profileAvatar}>
+              {role === 'senior' ? '🧓' : '👨‍👩‍👧'}
+            </Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{displayName}</Text>
+            <Text style={styles.profileEmail}>
+              {firebaseUser?.email || 'Not signed in'}
+            </Text>
+            <View style={styles.profileRoleBadge}>
+              <Text style={styles.profileRoleBadgeText}>
+                {role === 'senior' ? '🏠 Independent' : '👨‍👩‍👧 Family / Caregiver'}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.editProfileBtn}
+            onPress={() => { setEditNameValue(displayName); setShowEditName(true); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="pencil" size={16} color={COLORS.primary} />
+            <Text style={styles.editProfileBtnText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Edit name modal */}
+        <Modal visible={showEditName} animationType="fade" transparent onRequestClose={() => setShowEditName(false)}>
+          <View style={styles.editNameOverlay}>
+            <View style={styles.editNameModal}>
+              <Text style={styles.editNameTitle}>Edit Display Name</Text>
+              <TextInput
+                style={styles.editNameInput}
+                value={editNameValue}
+                onChangeText={setEditNameValue}
+                placeholder="Your name"
+                placeholderTextColor={COLORS.textMuted}
+                autoFocus
+                autoCapitalize="words"
+              />
+              <View style={styles.editNameActions}>
+                <TouchableOpacity
+                  style={styles.editNameCancelBtn}
+                  onPress={() => setShowEditName(false)}
+                >
+                  <Text style={styles.editNameCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.editNameSaveBtn}
+                  onPress={async () => {
+                    const newName = editNameValue.trim();
+                    if (!newName) return;
+                    setDisplayName(newName);
+                    setShowEditName(false);
+                    // Save to Firestore if available
+                    try {
+                      if (firebaseUser?.uid) {
+                        await updateDoc(doc(db, 'users', firebaseUser.uid), { displayName: newName });
+                      }
+                    } catch (e) { /* offline fallback */ }
+                  }}
+                >
+                  <Text style={styles.editNameSaveText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         {/* Role section header */}
         <View style={styles.sectionHeaderCard}>
@@ -188,33 +278,35 @@ export default function SettingsScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Inactivity threshold */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>⏱ Inactivity Alert</Text>
-              <Text style={styles.cardSub}>
-                Alert family if no activity is detected for:
-              </Text>
-              <View style={styles.thresholdGrid}>
-                {THRESHOLDS.map((t) => {
-                  const active = threshold === t.value;
-                  return (
-                    <TouchableOpacity
-                      key={t.value}
-                      style={[styles.thresholdBtn, active && styles.thresholdBtnActive]}
-                      onPress={() => handleThreshold(t.value)}
-                      activeOpacity={0.8}
-                      accessibilityLabel={`${t.label}, ${active ? 'selected' : ''}`}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: active }}
-                    >
-                      <Text style={[styles.thresholdText, active && styles.thresholdTextActive]}>
-                        {t.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            {/* Inactivity threshold — only show if wearable/step counting is available */}
+            {stepCountingAvailable && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>⏱ Inactivity Alert</Text>
+                <Text style={styles.cardSub}>
+                  Alert family if no activity is detected for:
+                </Text>
+                <View style={styles.thresholdGrid}>
+                  {THRESHOLDS.map((t) => {
+                    const active = threshold === t.value;
+                    return (
+                      <TouchableOpacity
+                        key={t.value}
+                        style={[styles.thresholdBtn, active && styles.thresholdBtnActive]}
+                        onPress={() => handleThreshold(t.value)}
+                        activeOpacity={0.8}
+                        accessibilityLabel={`${t.label}, ${active ? 'selected' : ''}`}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: active }}
+                      >
+                        <Text style={[styles.thresholdText, active && styles.thresholdTextActive]}>
+                          {t.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
+            )}
           </>
         )}
 
@@ -259,6 +351,71 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </>
         )}
+
+        {/* ── CONNECTED APPS / WEARABLES (shown for all roles) ── */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>⌚ Connected Apps</Text>
+          <Text style={styles.cardSub}>
+            Connect fitness wearables to sync activity data. Manage your connections in the Activity tab.
+          </Text>
+          {/* Apple Watch */}
+          <View style={styles.wearableRow}>
+            <Text style={styles.wearableRowIcon}>⌚</Text>
+            <View style={styles.wearableRowInfo}>
+              <Text style={styles.wearableRowName}>Apple Watch</Text>
+              <Text style={[styles.wearableRowStatus, { color: appleWatchConnected ? (COLORS.success || '#059669') : COLORS.textMuted }]}>
+                {appleWatchConnected ? '✓ Connected' : 'Not connected'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.wearableSmallBtn, appleWatchConnected && styles.wearableSmallBtnActive]}
+              onPress={() => {
+                if (appleWatchConnected) {
+                  Alert.alert('Apple Watch', 'Disconnect Apple Watch?', [
+                    { text: 'Disconnect', style: 'destructive', onPress: () => setAppleWatchConnected(false) },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                } else {
+                  setAppleWatchConnected(true);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.wearableSmallBtnText, appleWatchConnected && styles.wearableSmallBtnTextActive]}>
+                {appleWatchConnected ? 'Connected' : '+ Add'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.wearableDivider} />
+          {/* Fitbit */}
+          <View style={styles.wearableRow}>
+            <Text style={styles.wearableRowIcon}>📳</Text>
+            <View style={styles.wearableRowInfo}>
+              <Text style={styles.wearableRowName}>Fitbit</Text>
+              <Text style={[styles.wearableRowStatus, { color: fitbitConnected ? (COLORS.success || '#059669') : COLORS.textMuted }]}>
+                {fitbitConnected ? '✓ Connected' : 'Not connected'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.wearableSmallBtn, fitbitConnected && styles.wearableSmallBtnActive]}
+              onPress={() => {
+                if (fitbitConnected) {
+                  Alert.alert('Fitbit', 'Disconnect Fitbit?', [
+                    { text: 'Disconnect', style: 'destructive', onPress: () => setFitbitConnected(false) },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                } else {
+                  setFitbitConnected(true);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.wearableSmallBtnText, fitbitConnected && styles.wearableSmallBtnTextActive]}>
+                {fitbitConnected ? 'Connected' : '+ Add'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Notification toggles — shown for all roles */}
         <View style={styles.card}>
@@ -379,6 +536,135 @@ export default function SettingsScreen({ navigation }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   container: { padding: 20, paddingBottom: 48 },
+
+  // ── Profile card ──────────────────────────────────────────────────────────
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    padding: 18,
+    marginBottom: 20,
+    gap: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  profileAvatarWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primaryLight || '#E8F4FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  profileAvatar: { fontSize: 30 },
+  profileInfo: { flex: 1 },
+  profileName: { fontSize: 18, fontWeight: '800', color: COLORS.textPrimary },
+  profileEmail: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
+  profileRoleBadge: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.primaryLight || '#E8F4FD',
+    borderRadius: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  profileRoleBadgeText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
+  editProfileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight || '#E8F4FD',
+  },
+  editProfileBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+
+  // Edit name modal
+  editNameOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  editNameModal: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  editNameTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginBottom: 16 },
+  editNameInput: {
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 17,
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.background,
+    marginBottom: 20,
+  },
+  editNameActions: { flexDirection: 'row', gap: 12 },
+  editNameCancelBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+  },
+  editNameCancelText: { fontSize: 16, fontWeight: '700', color: COLORS.textSecondary },
+  editNameSaveBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+  },
+  editNameSaveText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+
+  // ── Wearables in Settings card ────────────────────────────────────────────
+  wearableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  wearableRowIcon: { fontSize: 28 },
+  wearableRowInfo: { flex: 1 },
+  wearableRowName: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  wearableRowStatus: { fontSize: 13, marginTop: 2 },
+  wearableSmallBtn: {
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primaryLight || '#E8F4FD',
+  },
+  wearableSmallBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  wearableSmallBtnText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  wearableSmallBtnTextActive: { color: '#fff' },
+  wearableDivider: { height: 1, backgroundColor: COLORS.divider || COLORS.border },
 
   settingsHeader: {
     flexDirection: 'row',

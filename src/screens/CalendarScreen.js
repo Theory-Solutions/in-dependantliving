@@ -8,7 +8,7 @@
  * via any medium, is strictly prohibited.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Modal, TextInput, Switch, Animated, Dimensions,
@@ -22,6 +22,7 @@ import { COLORS } from '../constants/colors';
 import parseEventText from '../utils/parseEventText';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { useApp } from '../context/AppContext';
 
 const { width } = Dimensions.get('window');
 
@@ -63,8 +64,12 @@ const CATEGORIES = [
 // ─── Date helpers ────────────────────────────────────────────────────────────
 
 function formatGroupLabel(dateStr) {
-  const todayStr = today.toISOString().split('T')[0];
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  // Always compute fresh — avoids stale module-level date issue
+  const nowToday = new Date();
+  const todayStr = nowToday.toISOString().split('T')[0];
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
   if (dateStr === todayStr) return 'Today';
   if (dateStr === tomorrowStr) return 'Tomorrow';
   const d = new Date(dateStr + 'T12:00:00');
@@ -152,7 +157,7 @@ function PulsingCircle() {
 
 // ─── Event card ──────────────────────────────────────────────────────────────
 
-function EventCard({ event, onPress, isExpanded, onEdit }) {
+function EventCard({ event, onPress, isExpanded, onEdit, onDelete }) {
   const cat = CATEGORIES.find(c => c.key === event.category);
   const color = event.color || cat?.color || COLORS.primary;
 
@@ -255,7 +260,7 @@ function EventCard({ event, onPress, isExpanded, onEdit }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert('Delete Event', `Delete "${event.title}"?`, [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive' },
+                { text: 'Delete', style: 'destructive', onPress: () => onDelete && onDelete(event) },
               ])}
             >
               <Ionicons name="trash" size={16} color={COLORS.alert} />
@@ -316,6 +321,152 @@ function WeekGrid({ events }) {
 
 const RECURRING_OPTIONS = ['None', 'Daily', 'Weekly', 'Monthly'];
 const REMINDER_OPTIONS = ['None', '30 min', '1 hour', '2 hours', '1 day', '3 days', '1 week'];
+
+// ─── Inline Time Picker (AM/PM, no native module) ────────────────────────────
+const TIME_HOURS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+const TIME_MINUTES = ['00','05','10','15','20','25','30','35','40','45','50','55'];
+const TIME_AMPM = ['AM','PM'];
+
+function InlineTimePicker({ value, onChange }) {
+  // Parse existing value like "10:30 AM"
+  const parseValue = (v) => {
+    if (!v) return { hour: '10', minute: '00', ampm: 'AM' };
+    const m = v.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (m) return { hour: String(parseInt(m[1])), minute: m[2].padStart(2,'0'), ampm: m[3].toUpperCase() };
+    return { hour: '10', minute: '00', ampm: 'AM' };
+  };
+
+  const [open, setOpen] = useState(false);
+  const parsed = parseValue(value);
+  const [selHour, setSelHour] = useState(parsed.hour);
+  const [selMin, setSelMin] = useState(parsed.minute);
+  const [selAmpm, setSelAmpm] = useState(parsed.ampm);
+
+  const buildTime = (h, m, a) => `${h}:${m} ${a}`;
+
+  const handleSelect = (h, m, a) => {
+    setSelHour(h); setSelMin(m); setSelAmpm(a);
+    onChange(buildTime(h, m, a));
+  };
+
+  return (
+    <View style={timePickerStyles.wrap}>
+      <TouchableOpacity
+        style={[timePickerStyles.trigger, open && timePickerStyles.triggerOpen]}
+        onPress={() => setOpen(v => !v)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="time-outline" size={20} color={open ? COLORS.primary : COLORS.textMuted} style={{ marginRight: 10 }} />
+        <Text style={[timePickerStyles.triggerText, !value && timePickerStyles.triggerPlaceholder]}>
+          {value || 'Tap to select a time'}
+        </Text>
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textMuted} />
+      </TouchableOpacity>
+
+      {open && (
+        <View style={timePickerStyles.panel}>
+          <View style={timePickerStyles.columnsRow}>
+            {/* Hours */}
+            <View style={timePickerStyles.col}>
+              <Text style={timePickerStyles.colLabel}>Hour</Text>
+              <ScrollView style={timePickerStyles.colScroll} showsVerticalScrollIndicator={false}>
+                {TIME_HOURS.map(h => (
+                  <TouchableOpacity
+                    key={h}
+                    style={[timePickerStyles.item, selHour === h && timePickerStyles.itemSelected]}
+                    onPress={() => handleSelect(h, selMin, selAmpm)}
+                  >
+                    <Text style={[timePickerStyles.itemText, selHour === h && timePickerStyles.itemTextSelected]}>{h}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+            <Text style={timePickerStyles.separator}>:</Text>
+            {/* Minutes */}
+            <View style={timePickerStyles.col}>
+              <Text style={timePickerStyles.colLabel}>Min</Text>
+              <ScrollView style={timePickerStyles.colScroll} showsVerticalScrollIndicator={false}>
+                {TIME_MINUTES.map(m => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[timePickerStyles.item, selMin === m && timePickerStyles.itemSelected]}
+                    onPress={() => handleSelect(selHour, m, selAmpm)}
+                  >
+                    <Text style={[timePickerStyles.itemText, selMin === m && timePickerStyles.itemTextSelected]}>{m}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+            {/* AM/PM */}
+            <View style={[timePickerStyles.col, { flex: 0.7 }]}>
+              <Text style={timePickerStyles.colLabel}>AM/PM</Text>
+              <View style={timePickerStyles.ampmCol}>
+                {TIME_AMPM.map(a => (
+                  <TouchableOpacity
+                    key={a}
+                    style={[timePickerStyles.ampmBtn, selAmpm === a && timePickerStyles.ampmBtnSelected]}
+                    onPress={() => handleSelect(selHour, selMin, a)}
+                  >
+                    <Text style={[timePickerStyles.ampmText, selAmpm === a && timePickerStyles.ampmTextSelected]}>{a}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity style={timePickerStyles.doneBtn} onPress={() => setOpen(false)}>
+            <Text style={timePickerStyles.doneBtnText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const timePickerStyles = StyleSheet.create({
+  wrap: { marginBottom: 16 },
+  trigger: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 14, minHeight: 52,
+  },
+  triggerOpen: { borderColor: COLORS.primary },
+  triggerText: { flex: 1, fontSize: 17, color: COLORS.textPrimary, fontWeight: '500' },
+  triggerPlaceholder: { color: COLORS.textMuted },
+  panel: {
+    backgroundColor: COLORS.surface, borderRadius: 14,
+    borderWidth: 1.5, borderColor: COLORS.primary,
+    padding: 12, marginTop: 4,
+    shadowColor: COLORS.shadowColor,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12, shadowRadius: 10, elevation: 5,
+  },
+  columnsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 4 },
+  col: { flex: 1 },
+  colLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textMuted, textAlign: 'center', marginBottom: 6 },
+  colScroll: { maxHeight: 160 },
+  separator: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, marginTop: 28, paddingHorizontal: 2 },
+  item: {
+    paddingVertical: 8, paddingHorizontal: 4,
+    borderRadius: 8, alignItems: 'center', marginBottom: 2,
+  },
+  itemSelected: { backgroundColor: COLORS.primary },
+  itemText: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
+  itemTextSelected: { color: '#fff', fontWeight: '800' },
+  ampmCol: { gap: 8, marginTop: 2 },
+  ampmBtn: {
+    borderRadius: 10, paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.background,
+  },
+  ampmBtnSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  ampmText: { fontSize: 15, fontWeight: '700', color: COLORS.textSecondary },
+  ampmTextSelected: { color: '#fff' },
+  doneBtn: {
+    marginTop: 10, paddingVertical: 8, alignItems: 'center',
+    borderTopWidth: 1, borderTopColor: COLORS.divider,
+  },
+  doneBtnText: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
+});
 
 const PICKER_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const PICKER_DAY_LABELS = ['S','M','T','W','T','F','S'];
@@ -635,12 +786,9 @@ function AddEventModal({ visible, onClose, onSave, initialData }) {
 
             {/* Time */}
             <Text style={styles.formLabel}>Time</Text>
-            <TextInput
-              style={styles.formInput}
+            <InlineTimePicker
               value={form.time}
-              onChangeText={t => setField('time', t)}
-              placeholder="e.g. 2:30 PM"
-              placeholderTextColor={COLORS.textMuted}
+              onChange={t => setField('time', t)}
             />
 
             {/* Location */}
@@ -1122,8 +1270,37 @@ function MonthView({ events, onDayPress }) {
 
 // ─── Main CalendarScreen ─────────────────────────────────────────────────────
 
+// ─── Generate medication calendar events from medication list ────────────────
+const MED_SLOT_TIMES = { morning: '8:00 AM', afternoon: '12:00 PM', evening: '6:00 PM', night: '9:00 PM' };
+const MED_SLOT_LABELS = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening', night: 'Night' };
+
+function generateMedEvents(medications) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const medEvents = [];
+  for (const med of medications) {
+    const freq = med.frequency || [];
+    for (const slot of freq) {
+      if (MED_SLOT_TIMES[slot]) {
+        medEvents.push({
+          id: `med-${med.id}-${slot}`,
+          title: `💊 ${med.name} - ${MED_SLOT_LABELS[slot]}`,
+          date: todayStr,
+          time: MED_SLOT_TIMES[slot],
+          category: 'meds',
+          color: '#1A6FA3',
+          isPrivate: false,
+          recurring: 'Daily',
+          _isMedEvent: true,
+        });
+      }
+    }
+  }
+  return medEvents;
+}
+
 export default function CalendarScreen() {
-  const [events, setEvents] = useState(
+  const { medications } = useApp();
+  const [userEvents, setUserEvents] = useState(
     MOCK_EVENTS.map(ev => ({ ...ev, date: toISODate(ev.date) }))
   );
   const [viewMode, setViewMode] = useState('agenda'); // 'agenda' | 'week' | 'month'
@@ -1135,19 +1312,31 @@ export default function CalendarScreen() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
 
+  // Merge user events + auto-generated medication events
+  // events is the complete merged array — all views read from this
+  const medEvents = generateMedEvents(medications || []);
+  const events = [
+    ...userEvents,
+    ...medEvents.filter(me => !userEvents.some(ue => ue.id === me.id)),
+  ];
+
   const toggleEvent = (ev) => {
     setExpandedId(prev => (prev === ev.id ? null : ev.id));
   };
 
   const handleAddEvent = (eventData) => {
     if (editingEvent) {
-      setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { ...ev, ...eventData, id: ev.id } : ev));
+      setUserEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { ...ev, ...eventData, id: ev.id } : ev));
       setEditingEvent(null);
       Alert.alert('Updated', `"${eventData.title}" has been updated.`);
     } else {
-      setEvents(prev => [...prev, eventData]);
+      setUserEvents(prev => [...prev, eventData]);
       Alert.alert('Event Added', `"${eventData.title}" has been added to your calendar.`);
     }
+  };
+
+  const handleDeleteEvent = (ev) => {
+    setUserEvents(prev => prev.filter(e => e.id !== ev.id));
   };
 
   const handleVoiceParsed = (parsed) => {
@@ -1354,7 +1543,9 @@ export default function CalendarScreen() {
                       event={ev}
                       onPress={toggleEvent}
                       isExpanded={expandedId === ev.id}
+                      onDelete={handleDeleteEvent}
                       onEdit={(ev) => {
+                        if (ev._isMedEvent) return; // med events aren't editable here
                         setEditingEvent(ev);
                         setAddInitialData(ev);
                         setShowAddModal(true);
@@ -1382,7 +1573,9 @@ export default function CalendarScreen() {
                   event={ev}
                   onPress={toggleEvent}
                   isExpanded={expandedId === ev.id}
+                  onDelete={handleDeleteEvent}
                   onEdit={(ev) => {
+                    if (ev._isMedEvent) return;
                     setEditingEvent(ev);
                     setAddInitialData(ev);
                     setShowAddModal(true);

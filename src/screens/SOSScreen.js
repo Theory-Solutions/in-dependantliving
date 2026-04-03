@@ -130,6 +130,13 @@ export default function SOSScreen({ navigation }) {
               onPress={() => navigation.goBack()}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
+              <Ionicons name="arrow-back" size={24} color="rgba(255,255,255,0.9)" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => navigation.goBack()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
               <Ionicons name="close" size={28} color="rgba(255,255,255,0.9)" />
             </TouchableOpacity>
           </View>

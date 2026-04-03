@@ -28,6 +28,7 @@ import SeniorHomeScreen from './src/screens/SeniorHomeScreen';
 import MedicationScreen from './src/screens/MedicationScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import AppsScreen from './src/screens/AppsScreen';
+import ActivityScreen from './src/screens/ActivityScreen';
 import WeatherScreen from './src/screens/WeatherScreen';
 import ScannerScreen from './src/screens/ScannerScreen';
 import FamilyDashScreen from './src/screens/FamilyDashScreen';
@@ -36,6 +37,8 @@ import SOSScreen from './src/screens/SOSScreen';
 import LocationScreen from './src/screens/LocationScreen';
 import SubscriptionScreen from './src/screens/SubscriptionScreen';
 import WellnessSummaryScreen from './src/screens/WellnessSummaryScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
+import TermsScreen from './src/screens/TermsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -115,7 +118,7 @@ function SeniorTabs() {
           if (route.name === 'Home') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Medications') iconName = focused ? 'medical' : 'medical-outline';
           else if (route.name === 'Calendar') iconName = focused ? 'calendar' : 'calendar-outline';
-          else if (route.name === 'Apps') iconName = focused ? 'apps' : 'apps-outline';
+          else if (route.name === 'Apps') iconName = focused ? 'walk' : 'walk-outline';
           return <Ionicons name={iconName} size={26} color={color} />;
         },
       })}
@@ -137,8 +140,8 @@ function SeniorTabs() {
       />
       <Tab.Screen
         name="Apps"
-        component={AppsScreen}
-        options={{ title: 'Apps' }}
+        component={ActivityScreen}
+        options={{ title: 'Activity' }}
       />
       <Tab.Screen
         name="Settings"
@@ -191,9 +194,17 @@ function AppTabs() {
 // ── Root Navigator ─────────────────────────────────────────────────────────
 function RootNavigator() {
   const { role, firebaseUser, isLoading, setRole } = useApp();
+  const [onboardingComplete, setOnboardingComplete] = useState(null); // null = checking
 
-  // Show splash/loading while auth state resolves
-  if (isLoading) {
+  // Check onboarding flag from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem('onboardingComplete').then(val => {
+      setOnboardingComplete(val === 'true');
+    }).catch(() => setOnboardingComplete(false));
+  }, []);
+
+  // Show splash/loading while auth state or onboarding flag resolves
+  if (isLoading || onboardingComplete === null) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -210,8 +221,23 @@ function RootNavigator() {
     );
   }
 
-  // ── No user + no role: show Auth flow ─────────────────────────────────────
-  // Also covers guest onboarding (AuthScreen navigates to Onboarding)
+  // ── Onboarding not yet complete: Welcome → Terms → Subscription → Auth flow ──
+  if (!onboardingComplete) {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="Terms" component={TermsScreen} />
+          <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+          <Stack.Screen name="Auth" component={AuthScreen} />
+          <Stack.Screen name="Pairing" component={PairingScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
+  // ── Onboarding done, no role yet: show Auth flow ──────────────────────────
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>

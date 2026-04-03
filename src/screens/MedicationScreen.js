@@ -64,7 +64,7 @@ function dosageLabel(med) {
 
 export default function MedicationScreen({ navigation }) {
   const { medications, addMedication, deleteMedication, markMedicationTaken, updateMedication } = useApp();
-  const [form, setForm] = useState({ name: '', dosage: '', quantity: '1', frequency: [] });
+  const [form, setForm] = useState({ name: '', dosage: '', quantity: '1', frequency: [], daysSupply: '', pillsTotal: '', pillsRemaining: '', refillsRemaining: '' });
   const [scanned, setScanned] = useState(false);
   const [editingMed, setEditingMed] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', dosage: '', quantity: '1', frequency: [], purpose: '', directions: '' });
@@ -97,8 +97,16 @@ export default function MedicationScreen({ navigation }) {
       Alert.alert('Missing Info', 'Please select when to take it.');
       return;
     }
-    addMedication({ name: form.name.trim(), dosage: form.dosage.trim(), frequency: form.frequency });
-    setForm({ name: '', dosage: '', quantity: '1', frequency: [] });
+    addMedication({
+      name: form.name.trim(),
+      dosage: form.dosage.trim(),
+      frequency: form.frequency,
+      daysSupply: parseInt(form.daysSupply) || 0,
+      pillsTotal: parseInt(form.pillsTotal) || 0,
+      pillsRemaining: parseInt(form.pillsRemaining) || parseInt(form.pillsTotal) || 0,
+      refillsRemaining: parseInt(form.refillsRemaining) || 0,
+    });
+    setForm({ name: '', dosage: '', quantity: '1', frequency: [], daysSupply: '', pillsTotal: '', pillsRemaining: '', refillsRemaining: '' });
     setScanned(false);
   };
 
@@ -350,6 +358,48 @@ export default function MedicationScreen({ navigation }) {
                 </TouchableOpacity>
               );
             })}
+          </View>
+
+          {/* Supply info row */}
+          <View style={styles.supplyRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Duration (days)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. 30"
+                placeholderTextColor={COLORS.textMuted}
+                value={form.daysSupply || ''}
+                onChangeText={t => setForm(prev => ({ ...prev, daysSupply: t }))}
+                keyboardType="number-pad"
+                accessibilityLabel="Duration in days"
+              />
+            </View>
+            <View style={{ width: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Pills in bottle</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. 60"
+                placeholderTextColor={COLORS.textMuted}
+                value={form.pillsTotal || ''}
+                onChangeText={t => setForm(prev => ({ ...prev, pillsTotal: t, pillsRemaining: t }))}
+                keyboardType="number-pad"
+                accessibilityLabel="Pills in bottle"
+              />
+            </View>
+            <View style={{ width: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Refills</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. 3"
+                placeholderTextColor={COLORS.textMuted}
+                value={form.refillsRemaining || ''}
+                onChangeText={t => setForm(prev => ({ ...prev, refillsRemaining: t }))}
+                keyboardType="number-pad"
+                accessibilityLabel="Refills available"
+              />
+            </View>
           </View>
 
           <TouchableOpacity
@@ -758,6 +808,11 @@ const styles = StyleSheet.create({
     minHeight: 58,
   },
 
+  supplyRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    marginTop: 8,
+  },
   frequencyGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

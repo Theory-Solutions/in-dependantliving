@@ -57,13 +57,18 @@ function ScanLine({ active }) {
 }
 
 // ─── Corner brackets for viewfinder ─────────────────────────────────────────
-function ViewfinderCorners() {
+function ViewfinderCorners({ showInnerBox }) {
   return (
     <>
       <View style={[styles.corner, styles.cornerTL]} />
       <View style={[styles.corner, styles.cornerTR]} />
       <View style={[styles.corner, styles.cornerBL]} />
       <View style={[styles.corner, styles.cornerBR]} />
+      {showInnerBox && (
+        <View style={styles.innerScanBox}>
+          <Text style={styles.innerScanBoxLabel}>Center medicine name here</Text>
+        </View>
+      )}
     </>
   );
 }
@@ -325,6 +330,7 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
   const [scanMode, setScanMode] = useState('label');
   const [scannedData, setScannedData] = useState(null);
   const [barcodeScanned, setBarcodeScanned] = useState(false);
+  const [scanReady, setScanReady] = useState(false);
   const [rotateProgress, setRotateProgress] = useState(0);  // 0-100% rotation capture
   const [isCapturing, setIsCapturing] = useState(false);
   const [barcodeSearching, setBarcodeSearching] = useState(false); // "Searching drug database..."
@@ -639,7 +645,7 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing="back"
-        onBarcodeScanned={isBarcode ? handleBarcodeScanned : undefined}
+        onBarcodeScanned={isBarcode && scanReady ? handleBarcodeScanned : undefined}
         barcodeScannerSettings={isBarcode ? {
           barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'datamatrix', 'pdf417'],
         } : undefined}
@@ -654,7 +660,7 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
           <View style={styles.overlaySide} />
           {/* The clear scan box */}
           <View style={styles.scanBox}>
-            <ViewfinderCorners />
+            <ViewfinderCorners showInnerBox={isBarcode} />
             {!isBarcode && <ScanLine active />}
           </View>
           <View style={styles.overlaySide} />
@@ -679,7 +685,7 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modeBtn, isBarcode && styles.modeBtnActive]}
-              onPress={() => { setScanMode('barcode'); setStep('barcode'); setBarcodeScanned(false); }}
+              onPress={() => { setScanMode('barcode'); setStep('barcode'); setBarcodeScanned(false); setScanReady(false); }}
             >
               <Text style={styles.modeBtnEmoji}>📊</Text>
               <Text style={[styles.modeBtnText, isBarcode && styles.modeBtnTextActive]}>Scan Barcode</Text>
@@ -702,6 +708,17 @@ export default function ScannerScreen({ navigation, onMedicationScanned }) {
               <ActivityIndicator color={COLORS.primary} size="small" style={{ marginRight: 10 }} />
               <Text style={styles.barcodeSearchingText}>Searching drug database...</Text>
             </View>
+          ) : !scanReady ? (
+            /* Pause state — user needs to position bottle first */
+            <TouchableOpacity
+              style={[styles.captureBtn, { borderColor: '#FACC15' }]}
+              onPress={() => setScanReady(true)}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.captureBtnInner, { backgroundColor: '#FACC15' }]}>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: '#000' }}>READY</Text>
+              </View>
+            </TouchableOpacity>
           ) : (
             <View style={styles.barcodeWaiting}>
               <Text style={styles.barcodeWaitingText}>
@@ -1296,6 +1313,28 @@ const styles = StyleSheet.create({
   captureBtnInner: {
     width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#fff',
+  },
+
+  // Inner scan box (barcode mode — center medicine name)
+  innerScanBox: {
+    position: 'absolute',
+    top: '10%',
+    left: '20%',
+    width: '60%',
+    height: '20%',
+    borderWidth: 2,
+    borderColor: '#FACC15',
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(250, 204, 21, 0.08)',
+  },
+  innerScanBoxLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FACC15',
+    textAlign: 'center',
+    paddingHorizontal: 4,
   },
 
   // Barcode auto scan
