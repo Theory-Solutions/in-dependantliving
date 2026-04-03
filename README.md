@@ -1,128 +1,76 @@
-# Always Near
+# In-dependent Living
 
-**Peace of mind for seniors and their families.**
+**Live independently. Stay connected.**
 
-> Built by Theory Solutions LLC — MVP Prototype v1.0.0
+A mobile app for senior citizens and caregivers with medication tracking, health monitoring, calendar management, family connectivity, and fitness tracking integration.
 
----
-
-## What It Does
-
-Always Near is a mobile app for senior citizen monitoring that:
-- Lets seniors log daily check-ins and track medications
-- Gives family members a real-time dashboard showing their loved one's status
-- Provides color-coded alerts (green/yellow/red) based on activity and medication adherence
-- Keeps all data on-device — no cloud, no data sharing
+> Built by Theory Solutions LLC — © 2026
 
 ---
 
-## Setup & Installation
+## Features
 
-### Prerequisites
-- Node.js 18+ and npm
-- Expo CLI (installed automatically via npx)
-- [Expo Go](https://expo.dev/go) app on your phone (iOS or Android)
+- 💊 **Medication Tracking** — Scan prescriptions, set reminders, track doses
+- 👥 **Family Connectivity** — Link with family members via secure pairing codes or shareable URLs
+- 📅 **Smart Calendar** — Track appointments, activities, and reminders
+- 🆘 **One-Tap Emergency** — SOS button calls 911 or family instantly
+- 📊 **Activity Monitoring** — Steps, stand hours, flights climbed (Apple Watch / Fitbit)
+- 🔒 **Privacy-First** — HIPAA-exempt design with device-only and encrypted cloud storage options
 
-### Install
+---
+
+## Tech Stack
+
+- **Framework:** React Native (Expo)
+- **Backend:** Firebase (Firestore, Auth)
+- **Build:** EAS Build (iOS + Android)
+- **Target:** iOS 13+ / Android 8+
+
+---
+
+## Setup
 
 ```bash
-cd always-near
+# Install dependencies
 npm install
-```
 
-### Run
-
-```bash
+# Run locally
 npx expo start
 ```
-
-This opens the Expo dev tools. Scan the QR code with:
-- **iOS:** Use the Camera app
-- **Android:** Use the Expo Go app
-
----
-
-## Testing with Expo Go
-
-1. Install **Expo Go** from the App Store or Google Play
-2. Run `npx expo start` in the project directory
-3. Scan the QR code shown in your terminal or browser
-4. The app loads directly on your phone — no build required!
 
 ---
 
 ## Project Structure
 
 ```
-always-near/
-├── App.js                          # Entry point + navigation
+in-dependent-living/
+├── App.js                    # Navigation + root
+├── app.json                  # Expo config
 ├── src/
-│   ├── constants/
-│   │   ├── colors.js               # Color palette
-│   │   └── mockData.js             # Mock data (Margaret, medications, etc.)
-│   ├── context/
-│   │   └── AppContext.js           # Global state management
-│   ├── screens/
-│   │   ├── OnboardingScreen.js     # Role selection (Senior / Family)
-│   │   ├── SeniorHomeScreen.js     # Clock, check-in, medication status
-│   │   ├── MedicationScreen.js     # Add/scan/manage medications
-│   │   ├── FamilyDashScreen.js     # Family monitoring dashboard
-│   │   └── SettingsScreen.js       # Alerts, notifications, pairing code
-│   └── components/
-│       ├── StatusCard.js           # Card with colored status border
-│       └── MedItem.js              # Single medication row with checkbox
-└── README.md
+│   ├── screens/              # All app screens
+│   ├── context/              # AppContext (state)
+│   ├── services/             # Firebase services
+│   ├── constants/            # Colors, mock data
+│   └── utils/                # Helpers
+└── web/                      # Landing pages
 ```
 
 ---
 
-## Screens
+## Pairing Flow
 
-| Screen | Role | Description |
-|--------|------|-------------|
-| **Onboarding** | Both | Choose "I'm a Senior" or "I'm a Family Member" |
-| **Senior Home** | Senior | Large clock, I'm OK button, today's meds |
-| **Medications** | Senior | Scan prescription, add/delete medications |
-| **Family Dashboard** | Family | Status card, med adherence, activity, steps |
-| **Settings** | Both | Alert thresholds, notifications, pairing code |
+1. Independent generates a pairing code in Settings
+2. Share via code OR shareable URL: `https://in-dependentliving.com/connect/XXXXXX`
+3. Family enters code or taps link → accounts linked
+4. Family sees real-time dashboard of Independent's status
 
 ---
 
-## Design
+## Subscription
 
-- **Primary:** `#2E86AB` (blue)
-- **Accent:** `#A8DADC` (teal)
-- **Background:** `#F8F9FA` (near white)
-- **Alert:** `#E63946` (red)
-- **Warning:** `#F4A261` (amber)
-- Minimum 18pt body font
-- Large touch targets throughout
-- High-contrast text
-
----
-
-## Demo Flow
-
-1. Launch → Onboarding screen
-2. Tap **"I'm a Senior"** → Senior tabs (Home, Medications, Settings)
-   - Big clock and date
-   - Tap **"I'm OK ✓"** to log a check-in
-   - Tap medication checkboxes to mark as taken
-   - Go to Medications → tap **"Scan Bottle"** to demo OCR simulation
-3. Go back to Onboarding (Settings → Clear All Data) → Tap **"I'm a Family Member"**
-   - Dashboard shows Margaret's status card
-   - Green/yellow/red based on activity + med adherence
-   - Toggle notification settings
-
----
-
-## Notes for Investors/Partners
-
-- All data is local (AsyncStorage) — privacy-first architecture
-- OCR simulation demonstrates the prescription scan UX flow
-- Activity/steps data is mocked for prototype; production would integrate HealthKit/Google Fit
-- Pairing code system designed for simple family linking without requiring accounts
-- Ready to extend with push notifications, backend sync, and wearable integrations
+- 7-day free trial
+- $24.99/month or $199/year
+- Cancel anytime via App Store / Play Store
 
 ---
 
