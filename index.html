@@ -1,796 +1,430 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>In-dependent Living | Live Independently. Stay Connected.</title>
-  <meta name="description" content="The mobile app that helps seniors live independently while keeping their family connected and informed.">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>In-Dependent Living — Their Independence. Your Peace of Mind.</title>
+  <meta name="description" content="The app that keeps seniors independent and families connected. Track medications, share calendars, monitor activity, and stay safe — together." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    :root {
-      --primary: #0F4C81;
-      --primary-dark: #0a3254;
-      --accent: #3B82F6;
-      --white: #ffffff;
-      --off-white: #f8fafc;
-      --gray-100: #f1f5f9;
-      --gray-200: #e2e8f0;
-      --gray-300: #cbd5e1;
-      --gray-400: #94a3b8;
-      --gray-500: #64748b;
-      --gray-600: #475569;
-      --gray-700: #334155;
-      --gray-800: #1e293b;
-      --text: #1e293b;
-      --text-light: #64748b;
-      --green: #10B981;
-      --green-light: #D1FAE5;
-    }
-    
-    html {
-      scroll-behavior: smooth;
-    }
-    
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--text);
-      background: var(--white);
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-    
-    /* Navigation */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--gray-200);
-    }
-    
-    .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: var(--primary);
-    }
-    
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-    }
-    
-    .logo-text {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-    
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-    }
-    
-    .nav-links a {
-      text-decoration: none;
-      color: var(--gray-600);
-      font-weight: 500;
-      font-size: 15px;
-      transition: color 0.2s;
-    }
-    
-    .nav-links a:hover {
-      color: var(--primary);
-    }
-    
-    .nav-cta {
-      background: var(--primary);
-      color: var(--white) !important;
-      padding: 10px 20px;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-    
-    .nav-cta:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-    }
-    
-    /* Hero Section */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-      padding: 120px 24px 80px;
-    }
-    
-    .hero-bg {
-      position: absolute;
-      inset: 0;
-      background: 
-        radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, rgba(15, 76, 129, 0.08) 0%, transparent 50%),
-        linear-gradient(180deg, var(--off-white) 0%, var(--white) 100%);
-    }
-    
-    .hero-pattern {
-      position: absolute;
-      inset: 0;
-      background-image: 
-        radial-gradient(circle at 1px 1px, var(--gray-200) 1px, transparent 0);
-      background-size: 40px 40px;
-      opacity: 0.5;
-    }
-    
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 900px;
-      text-align: center;
-    }
-    
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--green-light);
-      color: #065F46;
-      padding: 8px 16px;
-      border-radius: 100px;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 32px;
-      animation: fadeInUp 0.6s ease-out;
-    }
-    
-    .hero-badge span {
-      width: 8px;
-      height: 8px;
-      background: #10B981;
-      border-radius: 50%;
-    }
-    
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .hero h1 {
-      font-size: clamp(40px, 8vw, 72px);
-      font-weight: 800;
-      letter-spacing: -2px;
-      line-height: 1.1;
-      color: var(--primary);
-      margin-bottom: 24px;
-      animation: fadeInUp 0.6s ease-out 0.1s backwards;
-    }
-    
-    .hero p {
-      font-size: clamp(18px, 2.5vw, 22px);
-      color: var(--gray-500);
-      max-width: 600px;
-      margin: 0 auto 40px;
-      animation: fadeInUp 0.6s ease-out 0.2s backwards;
-    }
-    
-    .hero-cta {
-      display: flex;
-      gap: 16px;
-      justify-content: center;
-      flex-wrap: wrap;
-      animation: fadeInUp 0.6s ease-out 0.3s backwards;
-    }
-    
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 16px 32px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
-      border: none;
-    }
-    
-    .btn-primary {
-      background: var(--primary);
-      color: var(--white);
-      box-shadow: 0 4px 14px rgba(15, 76, 129, 0.3);
-    }
-    
-    .btn-primary:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(15, 76, 129, 0.4);
-    }
-    
-    .btn-secondary {
-      background: var(--white);
-      color: var(--text);
-      border: 2px solid var(--gray-200);
-    }
-    
-    .btn-secondary:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    
-    /* Features Section */
-    .features {
-      padding: 120px 24px;
-      background: var(--off-white);
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    .section-header {
-      text-align: center;
-      margin-bottom: 80px;
-    }
-    
-    .section-label {
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 16px;
-    }
-    
-    .section-title {
-      font-size: clamp(32px, 5vw, 48px);
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 16px;
-      letter-spacing: -1px;
-    }
-    
-    .section-subtitle {
-      font-size: 18px;
-      color: var(--gray-500);
-      max-width: 500px;
-      margin: 0 auto;
-    }
-    
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-    }
-    
-    .feature-card {
-      background: var(--white);
-      padding: 40px 32px;
-      border-radius: 20px;
-      border: 1px solid var(--gray-200);
-      transition: all 0.3s;
-    }
-    
-    .feature-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-      border-color: transparent;
-    }
-    
-    .feature-icon {
-      width: 56px;
-      height: 56px;
-      background: var(--off-white);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      margin-bottom: 24px;
-    }
-    
-    .feature-card h3 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: var(--text);
-    }
-    
-    .feature-card p {
-      color: var(--gray-500);
-      font-size: 15px;
-    }
-    
-    /* How It Works */
-    .how-it-works {
-      padding: 120px 24px;
-      background: var(--white);
-    }
-    
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 40px;
-    }
-    
-    .step {
-      text-align: center;
-    }
-    
-    .step-number {
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--white);
-      margin: 0 auto 24px;
-    }
-    
-    .step h3 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    
-    .step p {
-      color: var(--gray-500);
-      font-size: 14px;
-    }
-    
-    /* Pricing */
-    .pricing {
-      padding: 120px 24px;
-      background: var(--off-white);
-    }
-    
-    .pricing-grid {
-      display: flex;
-      justify-content: center;
-      gap: 24px;
-      flex-wrap: wrap;
-      margin-top: 48px;
-    }
-    
-    .price-card {
-      background: var(--white);
-      padding: 48px 40px;
-      border-radius: 24px;
-      border: 1px solid var(--gray-200);
-      text-align: center;
-      max-width: 380px;
-      flex: 1;
-      min-width: 300px;
-    }
-    
-    .price-card.featured {
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      color: var(--white);
-      border: none;
-      transform: scale(1.05);
-    }
-    
-    .price-card.featured .price {
-      color: var(--white);
-    }
-    
-    .price-card.featured .price span {
-      color: rgba(255,255,255,0.8);
-    }
-    
-    .price-card.featured p {
-      color: rgba(255,255,255,0.8);
-    }
-    
-    .price-card h3 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    
-    .price-card .price {
-      font-size: 56px;
-      font-weight: 800;
-      color: var(--primary);
-      margin: 24px 0;
-    }
-    
-    .price-card .price span {
-      font-size: 16px;
-      font-weight: 400;
-      color: var(--gray-500);
-    }
-    
-    .price-card ul {
-      list-style: none;
-      text-align: left;
-      margin: 24px 0;
-    }
-    
-    .price-card li {
-      padding: 12px 0;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 15px;
-      border-bottom: 1px solid var(--gray-100);
-    }
-    
-    .price-card li:last-child {
-      border-bottom: none;
-    }
-    
-    .price-card.featured li {
-      border-color: rgba(255,255,255,0.1);
-    }
-    
-    .check {
-      width: 20px;
-      height: 20px;
-      background: var(--green);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 12px;
-      flex-shrink: 0;
-    }
-    
-    .price-card .btn {
-      width: 100%;
-      justify-content: center;
-    }
-    
-    .price-card.featured .btn {
-      background: var(--white);
-      color: var(--primary);
-    }
-    
-    .trial-note {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 14px;
-      color: var(--gray-500);
-    }
-    
-    /* Footer */
-    footer {
-      background: var(--text);
-      color: var(--white);
-      padding: 80px 24px 40px;
-    }
-    
-    .footer-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 40px;
-    }
-    
-    .footer-brand {
-      max-width: 300px;
-    }
-    
-    .footer-brand .logo {
-      color: var(--white);
-      margin-bottom: 16px;
-    }
-    
-    .footer-brand p {
-      color: var(--gray-400);
-      font-size: 14px;
-    }
-    
-    .footer-links {
-      display: flex;
-      gap: 60px;
-    }
-    
-    .footer-col h4 {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .footer-col a {
-      display: block;
-      color: var(--gray-400);
-      text-decoration: none;
-      font-size: 14px;
-      padding: 8px 0;
-      transition: color 0.2s;
-    }
-    
-    .footer-col a:hover {
-      color: var(--white);
-    }
-    
-    .footer-bottom {
-      max-width: 1200px;
-      margin: 60px auto 0;
-      padding-top: 24px;
-      border-top: 1px solid var(--gray-700);
-      text-align: center;
-      color: var(--gray-500);
-      font-size: 14px;
-    }
-    
-    /* Mobile */
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-      
-      .hero {
-        padding-top: 100px;
-      }
-      
-      .hero h1 {
-        font-size: 36px;
-      }
-      
-      .pricing-grid {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .price-card.featured {
-        transform: none;
-      }
-    }
+    :root{--bg:#f7f5f0;--bg-alt:#ffffff;--navy:#0c2d52;--navy-mid:#0f3d6e;--blue:#1a5a9e;--blue-light:#2e7dd1;--accent:#e8773a;--text:#1a1a2e;--muted:#6b7280;--border:#e4e0d8;--surface:#ffffff;--cream:#faf8f4;--font-display:'Fraunces',Georgia,serif;--font-body:'Plus Jakarta Sans',sans-serif;--r-sm:8px;--r-md:16px;--r-lg:24px;--r-xl:32px;--shadow-sm:0 1px 4px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--shadow-md:0 4px 16px rgba(12,45,82,.08),0 12px 40px rgba(12,45,82,.06);--shadow-lg:0 8px 32px rgba(12,45,82,.12),0 24px 64px rgba(12,45,82,.08);--transition:0.2s ease;--transition-md:0.35s cubic-bezier(0.4,0,0.2,1)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+    img{display:block;max-width:100%}
+    a{text-decoration:none;color:inherit}
+    button{cursor:pointer;border:none;background:none;font-family:inherit}
+    .container{width:100%;max-width:1160px;margin:0 auto;padding:0 24px}
+    .section{padding:96px 0}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+    .eyebrow::before{content:'';display:block;width:24px;height:2px;background:var(--accent);border-radius:2px}
+    .section-headline{font-family:var(--font-display);font-size:clamp(2rem,4vw,3.2rem);font-weight:700;line-height:1.15;letter-spacing:-.025em;color:var(--navy);margin-bottom:16px}
+    .section-headline em{font-style:italic;font-weight:300}
+    .section-sub{font-size:17px;color:var(--muted);line-height:1.65}
+    /* NAV */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 0;transition:background var(--transition-md),padding var(--transition-md),box-shadow var(--transition-md)}
+    .nav.scrolled{background:rgba(247,245,240,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:14px 0;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--navy);letter-spacing:-.02em}
+    .nav-logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--navy),var(--blue-light));display:flex;align-items:center;justify-content:center}
+    .nav-links{display:flex;align-items:center;gap:36px;list-style:none}
+    .nav-links a{font-size:14px;font-weight:500;color:var(--muted);transition:color var(--transition)}
+    .nav-links a:hover{color:var(--navy)}
+    .nav-cta{display:flex;align-items:center;gap:12px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:var(--r-md);font-size:14px;font-weight:600;transition:all var(--transition);white-space:nowrap}
+    .btn-primary{background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(12,45,82,.25)}
+    .btn-primary:hover{background:var(--navy-mid);transform:translateY(-1px);box-shadow:0 4px 16px rgba(12,45,82,.3)}
+    .btn-secondary{background:transparent;color:var(--navy);border:1.5px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--navy);background:rgba(12,45,82,.04)}
+    .btn-accent{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(232,119,58,.3)}
+    .btn-accent:hover{background:#d4672f;transform:translateY(-1px);box-shadow:0 4px 20px rgba(232,119,58,.4)}
+    .btn-lg{padding:16px 32px;font-size:16px;border-radius:var(--r-lg)}
+    .hamburger{display:none}
+    /* HERO */
+    .hero{min-height:100vh;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-mid) 45%,#1a3a6b 100%);position:relative;display:flex;align-items:center;overflow:hidden;padding-top:80px}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(46,125,209,.18) 0%,transparent 70%),radial-gradient(ellipse 50% 80% at 10% 90%,rgba(232,119,58,.1) 0%,transparent 60%)}
+    .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px}
+    .hero-inner{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;width:100%}
+    .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:100px;color:rgba(255,255,255,.85);font-size:13px;font-weight:500;margin-bottom:28px;backdrop-filter:blur(8px)}
+    .hero-badge-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80}
+    .hero-headline{font-family:var(--font-display);font-size:clamp(2.8rem,5.5vw,4.8rem);font-weight:700;line-height:1.08;letter-spacing:-.03em;color:#fff;margin-bottom:24px}
+    .hero-headline em{font-style:italic;font-weight:300;color:rgba(255,255,255,.75)}
+    .accent-word{background:linear-gradient(135deg,#f9a74b,#e8773a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-sub{font-size:18px;color:rgba(255,255,255,.7);line-height:1.65;max-width:480px;margin-bottom:40px}
+    .hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:48px}
+    .hero-store-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 22px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r-md);color:#fff;font-size:14px;font-weight:500;transition:all var(--transition);backdrop-filter:blur(8px)}
+    .hero-store-btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+    .hero-proof{display:flex;align-items:center;gap:16px}
+    .hero-avatars{display:flex}
+    .hero-avatar{width:36px;height:36px;border-radius:50%;border:2px solid rgba(12,45,82,.6);margin-left:-10px;background:linear-gradient(135deg,#93c5fd,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white}
+    .hero-avatar:first-child{margin-left:0}
+    .hero-proof-text{font-size:13px;color:rgba(255,255,255,.65);line-height:1.4}
+    .hero-proof-text strong{color:rgba(255,255,255,.9);font-weight:600}
+    /* PHONE */
+    .hero-visual{position:relative;display:flex;justify-content:center}
+    .phone-wrap{position:relative;width:300px}
+    .phone-outer{width:300px;height:600px;background:linear-gradient(160deg,#1e3a5f,#0c2d52);border-radius:44px;border:1.5px solid rgba(255,255,255,.12);box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05) inset,0 1px 0 rgba(255,255,255,.1) inset;overflow:hidden;position:relative}
+    .phone-notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:100px;height:28px;background:#0a1f38;border-radius:100px;z-index:5}
+    .phone-screen{position:absolute;inset:0;padding:52px 16px 24px;display:flex;flex-direction:column;gap:10px}
+    .phone-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:4px}
+    .phone-h-label{font-size:9px;color:rgba(255,255,255,.5)}
+    .phone-h-name{font-size:16px;font-weight:700;color:#fff}
+    .phone-h-icon{width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:15px}
+    .phone-time-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px 16px;text-align:center}
+    .phone-time{font-size:34px;font-weight:800;color:#fff;letter-spacing:-.03em}
+    .phone-date{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+    .phone-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px}
+    .phone-card-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.45);margin-bottom:8px}
+    .phone-med-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+    .phone-med-row:last-child{border:none;padding-bottom:0}
+    .phone-med-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .phone-med-name{font-size:11px;color:rgba(255,255,255,.8);flex:1}
+    .phone-med-time{font-size:10px;color:rgba(255,255,255,.45)}
+    .phone-steps-row{display:flex;align-items:center;justify-content:space-between}
+    .phone-steps-num{font-size:20px;font-weight:700;color:#fff}
+    .phone-steps-label{font-size:9px;color:rgba(255,255,255,.45)}
+    .phone-steps-bar{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:6px;overflow:hidden}
+    .phone-steps-fill{height:100%;width:62%;background:linear-gradient(90deg,#4ade80,#22d3ee);border-radius:2px}
+    .phone-glow{position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(46,125,209,.4) 0%,transparent 70%);pointer-events:none}
+    .phone-float-badge{position:absolute;right:-44px;top:110px;background:white;border-radius:var(--r-md);padding:10px 14px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;white-space:nowrap;animation:float 4s ease-in-out infinite}
+    .phone-float-badge-2{position:absolute;left:-54px;bottom:130px;background:white;border-radius:var(--r-md);padding:10px 14px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;white-space:nowrap;animation:float 4s ease-in-out 1.5s infinite}
+    .float-badge-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .float-badge-text strong{display:block;font-size:13px;color:var(--navy);font-weight:700}
+    .float-badge-text span{color:var(--muted);font-size:11px}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    /* TRUST */
+    .trust-bar{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:28px 0}
+    .trust-bar-inner{display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap}
+    .trust-item{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;font-weight:500}
+    .trust-item svg{width:18px;height:18px;color:var(--blue);flex-shrink:0}
+    /* FEATURES */
+    .features{background:var(--cream)}
+    .features-header{text-align:center;max-width:640px;margin:0 auto 72px}
+    .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 32px;transition:all var(--transition-md);position:relative;overflow:hidden}
+    .feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--blue-light));opacity:0;transition:opacity var(--transition-md)}
+    .feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:transparent}
+    .feature-card:hover::before{opacity:1}
+    .feature-icon{width:52px;height:52px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+    .feature-title{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--navy);margin-bottom:10px;letter-spacing:-.01em}
+    .feature-desc{font-size:15px;color:var(--muted);line-height:1.65}
+    .feature-card.featured{background:linear-gradient(145deg,var(--navy),var(--navy-mid));border-color:transparent}
+    .feature-card.featured .feature-title{color:#fff}
+    .feature-card.featured .feature-desc{color:rgba(255,255,255,.65)}
+    .feature-card.featured::before{opacity:0!important}
+    /* HOW IT WORKS */
+    .how{background:var(--bg-alt)}
+    .how-header{text-align:center;max-width:600px;margin:0 auto 72px}
+    .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;position:relative}
+    .steps::before{content:'';position:absolute;top:28px;left:calc(12.5% + 28px);right:calc(12.5% + 28px);height:2px;background:linear-gradient(90deg,var(--border),var(--blue-light),var(--border))}
+    .step{text-align:center}
+    .step-num{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--blue-light));color:white;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 4px 16px rgba(12,45,82,.25);position:relative;z-index:1}
+    .step-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px}
+    .step-desc{font-size:14px;color:var(--muted);line-height:1.6}
+    /* AUDIENCE */
+    .audience{background:var(--cream)}
+    .audience-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+    .audience-card{border-radius:var(--r-xl);padding:48px;position:relative;overflow:hidden}
+    .audience-card.for-senior{background:linear-gradient(145deg,var(--navy),#1a3a6b);color:white}
+    .audience-card.for-caregiver{background:var(--surface);border:1px solid var(--border)}
+    .audience-role{display:inline-block;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px}
+    .for-senior .audience-role{background:rgba(255,255,255,.15);color:rgba(255,255,255,.9)}
+    .for-caregiver .audience-role{background:rgba(26,90,158,.1);color:var(--blue)}
+    .audience-headline{font-family:var(--font-display);font-size:clamp(1.6rem,2.8vw,2.4rem);font-weight:700;line-height:1.2;letter-spacing:-.02em;margin-bottom:16px}
+    .for-senior .audience-headline{color:white}
+    .for-caregiver .audience-headline{color:var(--navy)}
+    .audience-sub{font-size:16px;line-height:1.65;margin-bottom:32px}
+    .for-senior .audience-sub{color:rgba(255,255,255,.7)}
+    .for-caregiver .audience-sub{color:var(--muted)}
+    .audience-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+    .audience-list li{display:flex;align-items:flex-start;gap:12px;font-size:15px}
+    .for-senior .audience-list li{color:rgba(255,255,255,.85)}
+    .for-caregiver .audience-list li{color:var(--text)}
+    .check-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:11px}
+    .for-senior .check-icon{background:rgba(74,222,128,.2);color:#4ade80}
+    .for-caregiver .check-icon{background:rgba(26,90,158,.1);color:var(--blue)}
+    /* TESTIMONIALS */
+    .testimonials{background:var(--bg-alt)}
+    .testimonials-header{text-align:center;max-width:560px;margin:0 auto 64px}
+    .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    .testimonial-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:32px;transition:all var(--transition-md)}
+    .testimonial-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+    .stars{display:flex;gap:3px;margin-bottom:16px}
+    .star{color:#f59e0b;font-size:14px}
+    .testimonial-quote{font-size:15px;color:var(--text);line-height:1.7;margin-bottom:24px;font-style:italic}
+    .testimonial-author{display:flex;align-items:center;gap:12px}
+    .author-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0}
+    .author-name{font-size:14px;font-weight:600;color:var(--navy)}
+    .author-role{font-size:12px;color:var(--muted)}
+    /* PRICING */
+    .pricing{background:var(--cream)}
+    .pricing-header{text-align:center;max-width:560px;margin:0 auto 64px}
+    .pricing-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:760px;margin:0 auto}
+    .pricing-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-xl);padding:40px;position:relative;transition:all var(--transition-md)}
+    .pricing-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+    .pricing-card.popular{border-color:var(--navy);box-shadow:0 0 0 4px rgba(12,45,82,.06),var(--shadow-md)}
+    .popular-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--navy);color:white;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 16px;border-radius:100px;white-space:nowrap}
+    .pricing-plan{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);margin-bottom:12px}
+    .pricing-amount{font-family:var(--font-display);font-size:48px;font-weight:700;color:var(--navy);letter-spacing:-.03em}
+    .pricing-period{font-size:16px;color:var(--muted)}
+    .pricing-note{font-size:13px;color:var(--muted);margin-bottom:28px}
+    .pricing-divider{height:1px;background:var(--border);margin:28px 0}
+    .pricing-features{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+    .pricing-features li{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text)}
+    .pricing-features .check{color:var(--blue);font-weight:700}
+    .pricing-sub{text-align:center;font-size:13px;color:var(--muted);margin-top:32px}
+    /* CTA */
+    .cta-section{background:linear-gradient(145deg,var(--navy) 0%,#1a3a6b 100%);position:relative;overflow:hidden}
+    .cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 50%,rgba(46,125,209,.2) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 10% 20%,rgba(232,119,58,.12) 0%,transparent 60%)}
+    .cta-inner{position:relative;z-index:2;text-align:center;max-width:680px;margin:0 auto}
+    .cta-headline{font-family:var(--font-display);font-size:clamp(2.2rem,4.5vw,3.8rem);font-weight:700;line-height:1.1;letter-spacing:-.03em;color:#fff;margin-bottom:20px}
+    .cta-headline em{font-style:italic;font-weight:300;color:rgba(255,255,255,.75)}
+    .cta-sub{font-size:18px;color:rgba(255,255,255,.7);margin-bottom:40px;line-height:1.6}
+    .cta-actions{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap}
+    .cta-fine{font-size:13px;color:rgba(255,255,255,.4);margin-top:20px}
+    /* FOOTER */
+    .footer{background:#070f1c;color:rgba(255,255,255,.6);padding:64px 0 40px}
+    .footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:56px}
+    .footer-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:700;color:white;margin-bottom:16px}
+    .footer-logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--navy-mid),var(--blue-light));display:flex;align-items:center;justify-content:center}
+    .footer-tagline{font-size:14px;line-height:1.65;max-width:260px;margin-bottom:24px}
+    .footer-stores{display:flex;gap:10px;flex-wrap:wrap}
+    .footer-store-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:rgba(255,255,255,.8);font-size:12px;font-weight:500;transition:all var(--transition)}
+    .footer-store-btn:hover{background:rgba(255,255,255,.14)}
+    .footer-col h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:16px}
+    .footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+    .footer-col a{font-size:14px;color:rgba(255,255,255,.55);transition:color var(--transition)}
+    .footer-col a:hover{color:rgba(255,255,255,.9)}
+    .footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+    .footer-copy{font-size:13px}
+    .footer-legal{display:flex;gap:24px}
+    .footer-legal a{font-size:13px;color:rgba(255,255,255,.45);transition:color var(--transition)}
+    .footer-legal a:hover{color:rgba(255,255,255,.8)}
+    /* ANIMATIONS */
+    .fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+    .fade-up.is-visible{opacity:1;transform:translateY(0)}
+    .fade-up:nth-child(2){transition-delay:.1s}
+    .fade-up:nth-child(3){transition-delay:.2s}
+    .fade-up:nth-child(4){transition-delay:.3s}
+    .fade-up:nth-child(5){transition-delay:.4s}
+    .fade-up:nth-child(6){transition-delay:.5s}
+    /* RESPONSIVE */
+    @media(max-width:1024px){.features-grid{grid-template-columns:repeat(2,1fr)}.testimonials-grid{grid-template-columns:repeat(2,1fr)}.footer-top{grid-template-columns:1fr 1fr;gap:40px}}
+    @media(max-width:768px){.section{padding:64px 0}.nav-links{display:none}.hamburger{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:var(--r-sm);background:rgba(12,45,82,.08);flex-direction:column;gap:5px}.hamburger span{display:block;width:20px;height:2px;background:var(--navy);border-radius:1px}.hero-inner{grid-template-columns:1fr;gap:48px;text-align:center}.hero-sub{margin:0 auto 40px}.hero-actions{justify-content:center}.hero-proof{justify-content:center}.hero-visual{display:none}.features-grid{grid-template-columns:1fr}.steps{grid-template-columns:repeat(2,1fr)}.steps::before{display:none}.audience-grid{grid-template-columns:1fr}.testimonials-grid{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr;max-width:400px}.footer-top{grid-template-columns:1fr;gap:32px}.footer-bottom{flex-direction:column;text-align:center}.trust-bar-inner{gap:24px}}
+    @media(max-width:480px){.steps{grid-template-columns:1fr}.hero-actions,.cta-actions{flex-direction:column;align-items:stretch}.hero-store-btn{justify-content:center}}
   </style>
 </head>
 <body>
-  <!-- Navigation -->
-  <nav>
-    <div class="nav-container">
-      <a href="/" class="logo">
-        <div class="logo-icon">💙</div>
-        <span class="logo-text">In-dependent Living</span>
+  <nav class="nav" id="nav">
+    <div class="container"><div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="nav-logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        In-Dependent Living
       </a>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-        <a href="#pricing">Pricing</a>
-        <a href="terms.html">Terms</a>
-        <a href="privacy-policy.html">Privacy</a>
-        <a href="https://apps.apple.com/app/id6761432570" class="nav-cta">Download</a>
+      <ul class="nav-links"><li><a href="#features">Features</a></li><li><a href="#how-it-works">How It Works</a></li><li><a href="#pricing">Pricing</a></li></ul>
+      <div class="nav-cta">
+        <a href="#pricing" class="btn btn-primary" id="nav-cta-btn" style="display:none">Get Started</a>
+        <button class="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
       </div>
-    </div>
+    </div></div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-pattern"></div>
-    <div class="hero-content">
-      <div class="hero-badge">
-        <span></span>
-        7-Day Free Trial
+  <section class="hero" id="hero">
+    <div class="hero-grid"></div>
+    <div class="container"><div class="hero-inner">
+      <div class="hero-content">
+        <div class="hero-badge"><span class="hero-badge-dot"></span>Now available on iPhone &amp; iPad</div>
+        <h1 class="hero-headline">Their <span class="accent-word">independence.</span><br/><em>Your</em> peace of mind.</h1>
+        <p class="hero-sub">The app that keeps seniors living life on their own terms — while giving family the quiet reassurance they need. Medications, calendar, activity, and safety. All in one place.</p>
+        <div class="hero-actions">
+          <a href="https://apps.apple.com" class="hero-store-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Download on the App Store
+          </a>
+        </div>
+        <div class="hero-proof">
+          <div class="hero-avatars">
+            <div class="hero-avatar">M</div>
+            <div class="hero-avatar" style="background:linear-gradient(135deg,#c084fc,#8b5cf6)">J</div>
+            <div class="hero-avatar" style="background:linear-gradient(135deg,#fb923c,#f97316)">R</div>
+            <div class="hero-avatar" style="background:linear-gradient(135deg,#34d399,#10b981)">S</div>
+          </div>
+          <p class="hero-proof-text"><strong>10-day free trial</strong> included<br/>One plan covers the whole family</p>
+        </div>
       </div>
-      <h1>Live independently.<br>Stay connected.</h1>
-      <p>The mobile app that helps seniors live confidently while keeping their family informed and involved in their care.</p>
-      <div class="hero-cta">
-        <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary">
-          📱 Download on App Store
-        </a>
-        <a href="#how-it-works" class="btn btn-secondary">
-          Learn More
-        </a>
+      <div class="hero-visual">
+        <div class="phone-wrap">
+          <div class="phone-outer">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="phone-header">
+                <div><div class="phone-h-label">Good morning</div><div class="phone-h-name">Margaret 👋</div></div>
+                <div class="phone-h-icon">⚙️</div>
+              </div>
+              <div class="phone-time-card"><div class="phone-time">9:41</div><div class="phone-date">Thursday, April 10</div></div>
+              <div class="phone-card">
+                <div class="phone-card-label">💊 Medications Today</div>
+                <div class="phone-med-row"><div class="phone-med-dot" style="background:#4ade80"></div><span class="phone-med-name">Vitamin D — 1000 IU</span><span class="phone-med-time">Morning ✓</span></div>
+                <div class="phone-med-row"><div class="phone-med-dot" style="background:#60a5fa"></div><span class="phone-med-name">Metformin — 500mg</span><span class="phone-med-time">Evening</span></div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-label">🏃 Today's Activity</div>
+                <div class="phone-steps-row"><div><div class="phone-steps-num">4,218</div><div class="phone-steps-label">steps today</div></div><div style="font-size:22px">🎯</div></div>
+                <div class="phone-steps-bar"><div class="phone-steps-fill"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="phone-glow"></div>
+          <div class="phone-float-badge"><div class="float-badge-icon" style="background:#dcfce7">💊</div><div class="float-badge-text"><strong>Meds taken!</strong><span>Margaret took her morning dose</span></div></div>
+          <div class="phone-float-badge-2"><div class="float-badge-icon" style="background:#dbeafe">📍</div><div class="float-badge-text"><strong>All good today</strong><span>4,218 steps · Active</span></div></div>
+        </div>
       </div>
-    </div>
+    </div></div>
   </section>
 
-  <!-- Features -->
-  <section class="features" id="features">
+  <div class="trust-bar"><div class="container"><div class="trust-bar-inner">
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Private by design</div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>1 Independent + 2 Caregivers</div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Real-time updates</div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Apple Watch support</div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Built for families</div>
+  </div></div></div>
+
+  <section class="section features" id="features">
     <div class="container">
-      <div class="section-header">
-        <div class="section-label">Features</div>
-        <h2 class="section-title">Everything you need</h2>
-        <p class="section-subtitle">A complete solution for seniors and the people who care about them</p>
-      </div>
-      
+      <div class="features-header"><div class="eyebrow">Everything you need</div><h2 class="section-headline">Designed for real life.<br/><em>Not just emergencies.</em></h2><p class="section-sub">In-Dependent Living covers the everyday — meds, schedules, activity, and safety — so nothing falls through the cracks.</p></div>
       <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">💊</div>
-          <h3>Medication Tracking</h3>
-          <p>Scan prescriptions, set reminders, and track doses. Family members stay informed about medication schedules automatically.</p>
+        <div class="feature-card fade-up"><div class="feature-icon" style="background:#dbeafe">💊</div><h3 class="feature-title">Medication Tracking</h3><p class="feature-desc">Log medications, set schedules, and track daily doses. Caregivers see what was taken and when — without needing to call.</p></div>
+        <div class="feature-card featured fade-up"><div class="feature-icon" style="background:rgba(255,255,255,.15)">📅</div><h3 class="feature-title">Shared Calendar with Privacy</h3><p class="feature-desc">Seniors keep full control. Mark events private so caregivers only see "Busy" — dignity preserved, coordination still easy.</p></div>
+        <div class="feature-card fade-up"><div class="feature-icon" style="background:#dcfce7">🏃</div><h3 class="feature-title">Activity Monitoring</h3><p class="feature-desc">Syncs with Apple Watch and HealthKit. Steps, flights, heart rate — your family knows you're active without you reporting in.</p></div>
+        <div class="feature-card fade-up"><div class="feature-icon" style="background:#fee2e2">🆘</div><h3 class="feature-title">One-Tap SOS</h3><p class="feature-desc">A single button to reach family or emergency services. Visible, simple, and always available right on the home screen.</p></div>
+        <div class="feature-card fade-up"><div class="feature-icon" style="background:#fef9c3">🔗</div><h3 class="feature-title">Simple Pairing</h3><p class="feature-desc">Connect with family using a 6-character pairing code. Either side can generate or enter — no technical setup required.</p></div>
+        <div class="feature-card fade-up"><div class="feature-icon" style="background:#ede9fe">📋</div><h3 class="feature-title">Caregiver Dashboard</h3><p class="feature-desc">A dedicated view showing today's meds, events, activity, and reminders — everything a caregiver needs at a glance.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section how" id="how-it-works">
+    <div class="container">
+      <div class="how-header"><div class="eyebrow">Getting started</div><h2 class="section-headline">Up and running<br/><em>in minutes.</em></h2><p class="section-sub">No technical know-how needed. If you can use a smartphone, you can use In-Dependent Living.</p></div>
+      <div class="steps">
+        <div class="step fade-up"><div class="step-num">1</div><h3 class="step-title">Download the App</h3><p class="step-desc">Free on the App Store. Start your 10-day free trial the moment you sign up.</p></div>
+        <div class="step fade-up"><div class="step-num">2</div><h3 class="step-title">Choose Your Role</h3><p class="step-desc">Are you an independent living on your own, or a family caregiver? The app adapts to you.</p></div>
+        <div class="step fade-up"><div class="step-num">3</div><h3 class="step-title">Share a Pairing Code</h3><p class="step-desc">Generate a 6-character code and share it with family. They enter it and you're linked instantly.</p></div>
+        <div class="step fade-up"><div class="step-num">4</div><h3 class="step-title">Stay Connected</h3><p class="step-desc">Add medications, sync your calendar, and let activity tracking do the rest. Everyone stays informed.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section audience">
+    <div class="container">
+      <div style="text-align:center;max-width:600px;margin:0 auto 64px"><div class="eyebrow">Built for both of you</div><h2 class="section-headline">One app.<br/><em>Two perspectives.</em></h2></div>
+      <div class="audience-grid">
+        <div class="audience-card for-senior fade-up">
+          <span class="audience-role">For Independents</span>
+          <h3 class="audience-headline">Live life fully.<br/>On your terms.</h3>
+          <p class="audience-sub">Your privacy is built in. You decide what to share, what to keep private, and when to ask for help.</p>
+          <ul class="audience-list">
+            <li><span class="check-icon">✓</span>Track your own medications and daily routine</li>
+            <li><span class="check-icon">✓</span>Mark calendar events private — only you see the details</li>
+            <li><span class="check-icon">✓</span>Activity synced automatically — no manual logging</li>
+            <li><span class="check-icon">✓</span>SOS button always visible on your home screen</li>
+            <li><span class="check-icon">✓</span>You control who has access and what they see</li>
+          </ul>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">👥</div>
-          <h3>Family Connectivity</h3>
-          <p>Share your wellness with family. They see your activity, medications, and calendar — on your terms, privately.</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">📅</div>
-          <h3>Smart Calendar</h3>
-          <p>Track appointments, activities, and reminders. Easy voice entry makes adding events simple.</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🆘</div>
-          <h3>One-Tap Emergency</h3>
-          <p>SOS button calls 911 or family instantly. Your location is shared automatically with emergency contacts.</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">⌚</div>
-          <h3>Activity Monitoring</h3>
-          <p>Track steps, stand hours, and flights climbed. Connect Apple Watch or Fitbit for automatic sync.</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🔒</div>
-          <h3>Privacy First</h3>
-          <p>Your health data stays private. HIPAA-exempt design with secure encrypted cloud storage.</p>
+        <div class="audience-card for-caregiver fade-up">
+          <span class="audience-role">For Caregivers</span>
+          <h3 class="audience-headline">Stay close<br/>without hovering.</h3>
+          <p class="audience-sub">Check in without calling every hour. Get quiet reassurance — and jump in when it truly matters.</p>
+          <ul class="audience-list">
+            <li><span class="check-icon">✓</span>Dashboard shows today's full picture at a glance</li>
+            <li><span class="check-icon">✓</span>See medication logs — know doses were taken</li>
+            <li><span class="check-icon">✓</span>View shared calendar events and appointments</li>
+            <li><span class="check-icon">✓</span>Monitor activity levels without asking</li>
+            <li><span class="check-icon">✓</span>Send gentle reminders directly from the app</li>
+          </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- How It Works -->
-  <section class="how-it-works" id="how-it-works">
+  <section class="section testimonials">
     <div class="container">
-      <div class="section-header">
-        <div class="section-label">How It Works</div>
-        <h2 class="section-title">Get started in minutes</h2>
-        <p class="section-subtitle">Four simple steps to connected care</p>
-      </div>
-      
-      <div class="steps-grid">
-        <div class="step">
-          <div class="step-number">1</div>
-          <h3>Download</h3>
-          <p>Get the app from the App Store or Google Play</p>
-        </div>
-        
-        <div class="step">
-          <div class="step-number">2</div>
-          <h3>Create Account</h3>
-          <p>Sign up with your email — try free for 7 days</p>
-        </div>
-        
-        <div class="step">
-          <div class="step-number">3</div>
-          <h3>Connect Family</h3>
-          <p>Share a link or code with your loved ones</p>
-        </div>
-        
-        <div class="step">
-          <div class="step-number">4</div>
-          <h3>Stay Independent</h3>
-          <p>Live confidently while family stays informed</p>
-        </div>
+      <div class="testimonials-header"><div class="eyebrow">What families say</div><h2 class="section-headline">Real families.<br/><em>Real peace of mind.</em></h2></div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card fade-up"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div><p class="testimonial-quote">"My mom was resistant to anything that felt like surveillance. This app gave her control — she chooses what we see. She actually likes using it."</p><div class="testimonial-author"><div class="author-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">S</div><div><div class="author-name">Sarah K.</div><div class="author-role">Daughter &amp; Caregiver, Denver CO</div></div></div></div>
+        <div class="testimonial-card fade-up"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div><p class="testimonial-quote">"I live alone and my kids were worried. Now they can see I'm up, took my pills, and been on a walk. They stopped calling three times a day."</p><div class="testimonial-author"><div class="author-avatar" style="background:linear-gradient(135deg,#f97316,#fb923c)">M</div><div><div class="author-name">Margaret T.</div><div class="author-role">Independent, 74 — Phoenix AZ</div></div></div></div>
+        <div class="testimonial-card fade-up"><div class="stars"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div><p class="testimonial-quote">"We're caregivers spread across three states. In-Dependent Living made it feel like we were all in the same room looking out for Dad."</p><div class="testimonial-author"><div class="author-avatar" style="background:linear-gradient(135deg,#10b981,#34d399)">R</div><div><div class="author-name">Robert J.</div><div class="author-role">Son &amp; Primary Caregiver, Chicago IL</div></div></div></div>
       </div>
     </div>
   </section>
 
-  <!-- Pricing -->
-  <section class="pricing" id="pricing">
+  <section class="section pricing" id="pricing">
     <div class="container">
-      <div class="section-header">
-        <div class="section-label">Pricing</div>
-        <h2 class="section-title">Simple, transparent pricing</h2>
-        <p class="section-subtitle">Start free, pay only when you love it</p>
-      </div>
-      
+      <div class="pricing-header"><div class="eyebrow">Simple pricing</div><h2 class="section-headline">One plan.<br/><em>Whole family covered.</em></h2><p class="section-sub">One subscription covers 1 Independent and up to 2 Caregivers. No per-user fees, ever.</p></div>
       <div class="pricing-grid">
-        <div class="price-card">
-          <h3>Monthly</h3>
-          <div class="price">$24.99<span>/month</span></div>
-          <ul>
-            <li><span class="check">✓</span> All features included</li>
-            <li><span class="check">✓</span> Unlimited family connections</li>
-            <li><span class="check">✓</span> 24/7 support</li>
-            <li><span class="check">✓</span> Cancel anytime</li>
-          </ul>
-          <a href="https://apps.apple.com/app/id6761432570" class="btn btn-primary">Get Started</a>
+        <div class="pricing-card fade-up">
+          <div class="pricing-plan">Monthly</div>
+          <div><span class="pricing-amount">$24</span><span class="pricing-period">.99/mo</span></div>
+          <div class="pricing-note">Billed monthly · Cancel any time</div>
+          <a href="https://apps.apple.com" class="btn btn-secondary" style="width:100%;justify-content:center">Start Free Trial</a>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features"><li><span class="check">✓</span>Full access for Independent</li><li><span class="check">✓</span>Up to 2 linked Caregivers</li><li><span class="check">✓</span>Medications &amp; calendar</li><li><span class="check">✓</span>Activity &amp; Apple Watch sync</li><li><span class="check">✓</span>SOS &amp; emergency contacts</li><li><span class="check">✓</span>10-day free trial included</li></ul>
         </div>
-        
-        <div class="price-card featured">
-          <h3>Annual</h3>
-          <div class="price">$199<span>/year</span></div>
-          <p>Save 33%</p>
-          <ul>
-            <li><span class="check">✓</span> All features included</li>
-            <li><span class="check">✓</span> Unlimited family connections</li>
-            <li><span class="check">✓</span> 24/7 support</li>
-            <li><span class="check">✓</span> Cancel anytime</li>
-          </ul>
-          <a href="https://apps.apple.com/app/id6761432570" class="btn">Get Started</a>
+        <div class="pricing-card popular fade-up">
+          <div class="popular-badge">Best Value</div>
+          <div class="pricing-plan">Annual</div>
+          <div><span class="pricing-amount">$275</span><span class="pricing-period">.99/yr</span></div>
+          <div class="pricing-note">Save ~8% vs monthly · Billed once a year</div>
+          <a href="https://apps.apple.com" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+          <div class="pricing-divider"></div>
+          <ul class="pricing-features"><li><span class="check">✓</span>Everything in Monthly</li><li><span class="check">✓</span>Best price per month</li><li><span class="check">✓</span>One annual payment</li><li><span class="check">✓</span>Up to 2 linked Caregivers</li><li><span class="check">✓</span>Activity &amp; Apple Watch sync</li><li><span class="check">✓</span>10-day free trial included</li></ul>
         </div>
       </div>
-      
-      <p class="trial-note">🔒 No commitment. Cancel in your device's app store settings at least 24 hours before renewal.</p>
+      <p class="pricing-sub">Subscriptions managed through Apple · Cancel any time in App Store Settings</p>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer>
-    <div class="footer-content">
-      <div class="footer-brand">
-        <a href="/" class="logo">
-          <div class="logo-icon">💙</div>
-          <span class="logo-text">In-dependent Living</span>
+  <section class="section cta-section">
+    <div class="container"><div class="cta-inner">
+      <div class="eyebrow" style="color:rgba(255,255,255,.6);justify-content:center">Get started today</div>
+      <h2 class="cta-headline">Their independence.<br/><em>Your</em> peace of mind.</h2>
+      <p class="cta-sub">10 days free. No credit card needed to start. One plan covers the whole family.</p>
+      <div class="cta-actions">
+        <a href="https://apps.apple.com" class="btn btn-accent btn-lg">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Download on App Store
         </a>
-        <p>Helping seniors live independently while staying connected with the people who care about them.</p>
       </div>
-      
-      <div class="footer-links">
-        <div class="footer-col">
-          <h4>App</h4>
-          <a href="#features">Features</a>
-          <a href="#pricing">Pricing</a>
-          <a href="https://apps.apple.com/app/id6761432570">Download</a>
-        </div>
-        
-        <div class="footer-col">
-          <h4>Legal</h4>
-          <a href="terms.html">Terms of Service</a>
-          <a href="privacy-policy.html">Privacy Policy</a>
-        </div>
-        
-        <div class="footer-col">
-          <h4>Company</h4>
-          <a href="mailto:support@theorysolutions.com">Contact</a>
-        </div>
+      <p class="cta-fine">Available on iPhone &amp; iPad · iOS 16+ required</p>
+    </div></div>
+  </section>
+
+  <footer class="footer"><div class="container">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo"><div class="footer-logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>In-Dependent Living</div>
+        <p class="footer-tagline">Helping seniors live independently with the quiet support of family — built on trust, privacy, and genuine care.</p>
+        <div class="footer-stores"><a href="https://apps.apple.com" class="footer-store-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>App Store</a></div>
       </div>
+      <div class="footer-col"><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#how-it-works">How It Works</a></li><li><a href="#pricing">Pricing</a></li></ul></div>
+      <div class="footer-col"><h4>For You</h4><ul><li><a href="#features">For Independents</a></li><li><a href="#features">For Caregivers</a></li><li><a href="mailto:support@in-dependentliving.com">Contact Support</a></li></ul></div>
+      <div class="footer-col"><h4>Legal</h4><ul><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms of Service</a></li></ul></div>
     </div>
-    
     <div class="footer-bottom">
-      <p>© 2026 Theory Solutions LLC. All rights reserved.</p>
+      <p class="footer-copy">© 2026 Theory Solutions LLC. All rights reserved.</p>
+      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:support@in-dependentliving.com">Contact</a></div>
     </div>
-  </footer>
+  </div></footer>
+
+  <script>
+    const nav=document.getElementById('nav'),btn=document.getElementById('nav-cta-btn');
+    window.addEventListener('scroll',()=>{if(window.scrollY>60){nav.classList.add('scrolled');btn.style.display='inline-flex'}else{nav.classList.remove('scrolled');btn.style.display='none'}},{passive:true});
+    const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('is-visible')}),{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+    document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+    document.querySelectorAll('.hero-badge,.hero-headline,.hero-sub,.hero-actions,.hero-proof').forEach((el,i)=>{el.style.cssText=`opacity:0;transform:translateY(20px);transition:opacity .7s ease ${i*120}ms,transform .7s ease ${i*120}ms`;setTimeout(()=>{el.style.opacity='1';el.style.transform='translateY(0)'},80)});
+  </script>
 </body>
 </html>
