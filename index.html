@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>In-Dependent Living — Their Independence. Your Peace of Mind.</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <meta property="og:image" content="icon.png" />
   <meta name="description" content="The app that keeps seniors independent and families connected. Track medications, share calendars, monitor activity, and stay safe — together." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,7 +31,7 @@
     .nav.scrolled{background:rgba(247,245,240,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:14px 0;box-shadow:0 1px 0 rgba(0,0,0,.08)}
     .nav-inner{display:flex;align-items:center;justify-content:space-between}
     .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--navy);letter-spacing:-.02em}
-    .nav-logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--navy),var(--blue-light));display:flex;align-items:center;justify-content:center}
+    .nav-logo-icon{width:36px;height:36px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
     .nav-links{display:flex;align-items:center;gap:36px;list-style:none}
     .nav-links a{font-size:14px;font-weight:500;color:var(--muted);transition:color var(--transition)}
     .nav-links a:hover{color:var(--navy)}
@@ -188,7 +191,7 @@
     .footer{background:#070f1c;color:rgba(255,255,255,.6);padding:64px 0 40px}
     .footer-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:56px}
     .footer-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:700;color:white;margin-bottom:16px}
-    .footer-logo-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--navy-mid),var(--blue-light));display:flex;align-items:center;justify-content:center}
+    .footer-logo-icon{width:36px;height:36px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
     .footer-tagline{font-size:14px;line-height:1.65;max-width:260px;margin-bottom:24px}
     .footer-stores{display:flex;gap:10px;flex-wrap:wrap}
     .footer-store-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:rgba(255,255,255,.8);font-size:12px;font-weight:500;transition:all var(--transition)}
@@ -220,7 +223,7 @@
   <nav class="nav" id="nav">
     <div class="container"><div class="nav-inner">
       <a href="/" class="nav-logo">
-        <div class="nav-logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="nav-logo-icon"><img src="icon.png" alt="In-Dependent Living logo" style="width:100%;height:100%;display:block;border-radius:inherit"/></div>
         In-Dependent Living
       </a>
       <ul class="nav-links"><li><a href="#features">Features</a></li><li><a href="#how-it-works">How It Works</a></li><li><a href="#pricing">Pricing</a></li></ul>
@@ -239,7 +242,7 @@
         <h1 class="hero-headline">Their <span class="accent-word">independence.</span><br/><em>Your</em> peace of mind.</h1>
         <p class="hero-sub">The app that keeps seniors living life on their own terms — while giving family the quiet reassurance they need. Medications, calendar, activity, and safety. All in one place.</p>
         <div class="hero-actions">
-          <a href="https://apps.apple.com" class="hero-store-btn">
+          <a href="https://apps.apple.com/us/app/in-dependent-living/id6761432570" class="hero-store-btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
             Download on the App Store
           </a>
@@ -251,7 +254,7 @@
             <div class="hero-avatar" style="background:linear-gradient(135deg,#fb923c,#f97316)">R</div>
             <div class="hero-avatar" style="background:linear-gradient(135deg,#34d399,#10b981)">S</div>
           </div>
-          <p class="hero-proof-text"><strong>10-day free trial</strong> included<br/>One plan covers the whole family</p>
+          <p class="hero-proof-text"><strong>7-day free trial</strong> included<br/>Each person has their own subscription</p>
         </div>
       </div>
       <div class="hero-visual">
@@ -286,7 +289,7 @@
 
   <div class="trust-bar"><div class="container"><div class="trust-bar-inner">
     <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Private by design</div>
-    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>1 Independent + 2 Caregivers</div>
+    <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Pairs seniors &amp; caregivers</div>
     <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Real-time updates</div>
     <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Apple Watch support</div>
     <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Built for families</div>
@@ -310,7 +313,7 @@
     <div class="container">
       <div class="how-header"><div class="eyebrow">Getting started</div><h2 class="section-headline">Up and running<br/><em>in minutes.</em></h2><p class="section-sub">No technical know-how needed. If you can use a smartphone, you can use In-Dependent Living.</p></div>
       <div class="steps">
-        <div class="step fade-up"><div class="step-num">1</div><h3 class="step-title">Download the App</h3><p class="step-desc">Free on the App Store. Start your 10-day free trial the moment you sign up.</p></div>
+        <div class="step fade-up"><div class="step-num">1</div><h3 class="step-title">Download the App</h3><p class="step-desc">Free on the App Store. Start your 7-day free trial the moment you sign up.</p></div>
         <div class="step fade-up"><div class="step-num">2</div><h3 class="step-title">Choose Your Role</h3><p class="step-desc">Are you an independent living on your own, or a family caregiver? The app adapts to you.</p></div>
         <div class="step fade-up"><div class="step-num">3</div><h3 class="step-title">Share a Pairing Code</h3><p class="step-desc">Generate a 6-character code and share it with family. They enter it and you're linked instantly.</p></div>
         <div class="step fade-up"><div class="step-num">4</div><h3 class="step-title">Stay Connected</h3><p class="step-desc">Add medications, sync your calendar, and let activity tracking do the rest. Everyone stays informed.</p></div>
@@ -363,24 +366,24 @@
 
   <section class="section pricing" id="pricing">
     <div class="container">
-      <div class="pricing-header"><div class="eyebrow">Simple pricing</div><h2 class="section-headline">One plan.<br/><em>Whole family covered.</em></h2><p class="section-sub">One subscription covers 1 Independent and up to 2 Caregivers. No per-user fees, ever.</p></div>
+      <div class="pricing-header"><div class="eyebrow">Simple pricing</div><h2 class="section-headline">One simple price.<br/><em>Per person.</em></h2><p class="section-sub">Everyone pays the same — each person subscribes individually, whether you're an Independent or a Caregiver. Same features for both.</p></div>
       <div class="pricing-grid">
         <div class="pricing-card fade-up">
           <div class="pricing-plan">Monthly</div>
-          <div><span class="pricing-amount">$24</span><span class="pricing-period">.99/mo</span></div>
+          <div><span class="pricing-amount">$7</span><span class="pricing-period">.99/mo</span></div>
           <div class="pricing-note">Billed monthly · Cancel any time</div>
-          <a href="https://apps.apple.com" class="btn btn-secondary" style="width:100%;justify-content:center">Start Free Trial</a>
+          <a href="https://apps.apple.com/us/app/in-dependent-living/id6761432570" class="btn btn-secondary" style="width:100%;justify-content:center">Start Free Trial</a>
           <div class="pricing-divider"></div>
-          <ul class="pricing-features"><li><span class="check">✓</span>Full access for Independent</li><li><span class="check">✓</span>Up to 2 linked Caregivers</li><li><span class="check">✓</span>Medications &amp; calendar</li><li><span class="check">✓</span>Activity &amp; Apple Watch sync</li><li><span class="check">✓</span>SOS &amp; emergency contacts</li><li><span class="check">✓</span>10-day free trial included</li></ul>
+          <ul class="pricing-features"><li><span class="check">✓</span>Full access for your account</li><li><span class="check">✓</span>Pair with senior &amp; caregivers</li><li><span class="check">✓</span>Medications &amp; calendar</li><li><span class="check">✓</span>Activity &amp; Apple Watch sync</li><li><span class="check">✓</span>SOS &amp; emergency contacts</li><li><span class="check">✓</span>7-day free trial included</li></ul>
         </div>
         <div class="pricing-card popular fade-up">
           <div class="popular-badge">Best Value</div>
           <div class="pricing-plan">Annual</div>
-          <div><span class="pricing-amount">$275</span><span class="pricing-period">.99/yr</span></div>
-          <div class="pricing-note">Save ~8% vs monthly · Billed once a year</div>
-          <a href="https://apps.apple.com" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
+          <div><span class="pricing-amount">$79</span><span class="pricing-period">.99/yr</span></div>
+          <div class="pricing-note">Save ~17% vs monthly · Just $6.67/mo</div>
+          <a href="https://apps.apple.com/us/app/in-dependent-living/id6761432570" class="btn btn-primary" style="width:100%;justify-content:center">Start Free Trial</a>
           <div class="pricing-divider"></div>
-          <ul class="pricing-features"><li><span class="check">✓</span>Everything in Monthly</li><li><span class="check">✓</span>Best price per month</li><li><span class="check">✓</span>One annual payment</li><li><span class="check">✓</span>Up to 2 linked Caregivers</li><li><span class="check">✓</span>Activity &amp; Apple Watch sync</li><li><span class="check">✓</span>10-day free trial included</li></ul>
+          <ul class="pricing-features"><li><span class="check">✓</span>Everything in Monthly</li><li><span class="check">✓</span>Best price per month</li><li><span class="check">✓</span>One annual payment</li><li><span class="check">✓</span>Pair with senior &amp; caregivers</li><li><span class="check">✓</span>Activity &amp; Apple Watch sync</li><li><span class="check">✓</span>7-day free trial included</li></ul>
         </div>
       </div>
       <p class="pricing-sub">Subscriptions managed through Apple · Cancel any time in App Store Settings</p>
@@ -391,9 +394,9 @@
     <div class="container"><div class="cta-inner">
       <div class="eyebrow" style="color:rgba(255,255,255,.6);justify-content:center">Get started today</div>
       <h2 class="cta-headline">Their independence.<br/><em>Your</em> peace of mind.</h2>
-      <p class="cta-sub">10 days free. No credit card needed to start. One plan covers the whole family.</p>
+      <p class="cta-sub">7 days free. No credit card needed to start. Each person subscribes individually.</p>
       <div class="cta-actions">
-        <a href="https://apps.apple.com" class="btn btn-accent btn-lg">
+        <a href="https://apps.apple.com/us/app/in-dependent-living/id6761432570" class="btn btn-accent btn-lg">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
           Download on App Store
         </a>
@@ -405,17 +408,17 @@
   <footer class="footer"><div class="container">
     <div class="footer-top">
       <div>
-        <div class="footer-logo"><div class="footer-logo-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>In-Dependent Living</div>
+        <div class="footer-logo"><div class="footer-logo-icon"><img src="icon.png" alt="In-Dependent Living logo" style="width:100%;height:100%;display:block;border-radius:inherit"/></div>In-Dependent Living</div>
         <p class="footer-tagline">Helping seniors live independently with the quiet support of family — built on trust, privacy, and genuine care.</p>
-        <div class="footer-stores"><a href="https://apps.apple.com" class="footer-store-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>App Store</a></div>
+        <div class="footer-stores"><a href="https://apps.apple.com/us/app/in-dependent-living/id6761432570" class="footer-store-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>App Store</a></div>
       </div>
       <div class="footer-col"><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#how-it-works">How It Works</a></li><li><a href="#pricing">Pricing</a></li></ul></div>
-      <div class="footer-col"><h4>For You</h4><ul><li><a href="#features">For Independents</a></li><li><a href="#features">For Caregivers</a></li><li><a href="mailto:support@in-dependentliving.com">Contact Support</a></li></ul></div>
+      <div class="footer-col"><h4>For You</h4><ul><li><a href="#features">For Independents</a></li><li><a href="#features">For Caregivers</a></li><li><a href="mailto:support@theory-solutions.com">Contact Support</a></li></ul></div>
       <div class="footer-col"><h4>Legal</h4><ul><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms of Service</a></li></ul></div>
     </div>
     <div class="footer-bottom">
       <p class="footer-copy">© 2026 Theory Solutions LLC. All rights reserved.</p>
-      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:support@in-dependentliving.com">Contact</a></div>
+      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:support@theory-solutions.com">Contact</a></div>
     </div>
   </div></footer>
 
