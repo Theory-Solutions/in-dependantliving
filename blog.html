@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Blog — In-Dependent Living</title>
+<meta name="description" content="Practical, respectful advice on senior independence, caregiving, medication safety, and staying close to aging parents without hovering." />
+<link rel="icon" type="image/png" href="icon.png" />
+<link rel="apple-touch-icon" href="icon.png" />
+<meta property="og:image" content="icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,700;1,9..144,300;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#f7f5f0;--bg-alt:#ffffff;--navy:#0c2d52;--navy-mid:#0f3d6e;--blue:#1a5a9e;--blue-light:#2e7dd1;--accent:#e8773a;--text:#1a1a2e;--muted:#6b7280;--border:#e4e0d8;--surface:#ffffff;--cream:#faf8f4;--font-display:'Fraunces',Georgia,serif;--font-body:'Plus Jakarta Sans',sans-serif;--r-sm:8px;--r-md:16px;--r-lg:24px;--r-xl:32px;--shadow-sm:0 1px 4px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);--shadow-md:0 4px 16px rgba(12,45,82,.08),0 12px 40px rgba(12,45,82,.06);--shadow-lg:0 8px 32px rgba(12,45,82,.12),0 24px 64px rgba(12,45,82,.08);--transition:.2s ease;--transition-md:.35s cubic-bezier(.4,0,.2,1)}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased}
+  img{display:block;max-width:100%}
+  a{text-decoration:none;color:inherit}
+  .container{width:100%;max-width:1160px;margin:0 auto;padding:0 24px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+  .eyebrow::before{content:'';display:block;width:24px;height:2px;background:var(--accent);border-radius:2px}
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:100;background:rgba(247,245,240,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(12,45,82,.08)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+  .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--navy);letter-spacing:-.02em}
+  .nav-logo-icon{width:36px;height:36px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .nav-links{display:flex;align-items:center;gap:28px;list-style:none}
+  .nav-links a{font-size:14px;font-weight:500;color:var(--muted);transition:color var(--transition)}
+  .nav-links a:hover,.nav-links a.active{color:var(--navy)}
+  /* HEADER */
+  .blog-hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-mid) 50%,#1a3a6b 100%);position:relative;overflow:hidden;padding:80px 0 88px}
+  .blog-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 75% 30%,rgba(46,125,209,.18) 0%,transparent 70%),radial-gradient(ellipse 50% 70% at 5% 95%,rgba(232,119,58,.1) 0%,transparent 60%)}
+  .blog-hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px}
+  .blog-hero-inner{position:relative;z-index:2;max-width:680px}
+  .blog-hero .eyebrow{color:rgba(255,255,255,.6)}
+  .blog-hero h1{font-family:var(--font-display);font-size:clamp(2.4rem,5vw,3.8rem);font-weight:700;line-height:1.08;letter-spacing:-.03em;color:#fff;margin-bottom:18px}
+  .blog-hero h1 em{font-style:italic;font-weight:300;color:rgba(255,255,255,.75)}
+  .blog-hero p{font-size:18px;color:rgba(255,255,255,.7);line-height:1.6;max-width:520px}
+  /* CONTENT */
+  .blog-main{padding:72px 0 40px}
+  .section-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--blue);margin-bottom:28px}
+  /* FEATURED */
+  .featured{display:grid;grid-template-columns:1.05fr .95fr;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;transition:all var(--transition-md);margin-bottom:56px}
+  .featured:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:transparent}
+  .featured-visual{background:linear-gradient(150deg,var(--navy),#1a3a6b);position:relative;overflow:hidden;min-height:300px;display:flex;align-items:center;justify-content:center;padding:40px}
+  .featured-visual::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 70% 40%,rgba(46,125,209,.25) 0%,transparent 70%),radial-gradient(ellipse 60% 60% at 20% 90%,rgba(232,119,58,.18) 0%,transparent 60%)}
+  .featured-visual-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:40px 40px}
+  .featured-glyph{position:relative;z-index:2;font-family:var(--font-display);font-style:italic;font-weight:300;font-size:clamp(1.5rem,2.6vw,2rem);line-height:1.3;color:rgba(255,255,255,.92);text-align:center}
+  .featured-glyph span{color:#f9a74b;font-style:normal;font-weight:700}
+  .featured-body{padding:44px 40px;display:flex;flex-direction:column;justify-content:center}
+  .tag{display:inline-block;align-self:flex-start;padding:5px 13px;border-radius:100px;background:rgba(26,90,158,.08);color:var(--blue);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px}
+  .featured-body h2{font-family:var(--font-display);font-size:clamp(1.5rem,2.8vw,2rem);font-weight:700;line-height:1.18;letter-spacing:-.02em;color:var(--navy);margin-bottom:14px}
+  .featured-body h2 a{transition:color var(--transition)}
+  .featured-body h2 a:hover{color:var(--blue)}
+  .featured-body p{font-size:16px;color:var(--muted);line-height:1.65;margin-bottom:22px}
+  .post-meta{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);margin-bottom:24px}
+  .post-meta .dot{width:4px;height:4px;border-radius:50%;background:var(--border)}
+  .read-link{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;font-size:15px;font-weight:600;color:var(--navy);transition:gap var(--transition)}
+  .read-link:hover{gap:12px}
+  .read-link svg{width:16px;height:16px}
+  /* TOPICS */
+  .topics{padding:8px 0 16px}
+  .topics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:8px}
+  .topic-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:30px 28px;transition:all var(--transition-md)}
+  .topic-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+  .topic-icon{width:48px;height:48px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
+  .topic-card h3{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px;letter-spacing:-.01em}
+  .topic-card p{font-size:14.5px;color:var(--muted);line-height:1.6}
+  .soon{display:inline-block;margin-top:16px;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--accent)}
+  /* CTA */
+  .cta-section{margin:72px 0 0;background:linear-gradient(150deg,var(--navy),#1a3a6b);border-radius:var(--r-xl);padding:64px 48px;text-align:center;position:relative;overflow:hidden}
+  .cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 80% 40%,rgba(46,125,209,.2) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 12% 20%,rgba(232,119,58,.12) 0%,transparent 60%)}
+  .cta-inner{position:relative;z-index:2;max-width:600px;margin:0 auto}
+  .cta-inner h2{font-family:var(--font-display);font-size:clamp(1.9rem,3.6vw,2.8rem);font-weight:700;line-height:1.12;letter-spacing:-.025em;color:#fff;margin-bottom:16px}
+  .cta-inner h2 em{font-style:italic;font-weight:300;color:rgba(255,255,255,.75)}
+  .cta-inner p{font-size:17px;color:rgba(255,255,255,.7);margin-bottom:32px}
+  .store-btn{display:inline-flex;align-items:center;gap:10px;padding:16px 30px;background:var(--accent);color:#fff;border-radius:var(--r-lg);font-size:16px;font-weight:600;transition:all var(--transition);box-shadow:0 4px 20px rgba(232,119,58,.35)}
+  .store-btn:hover{background:#d4672f;transform:translateY(-1px);box-shadow:0 6px 26px rgba(232,119,58,.45)}
+  .cta-fine{font-size:13px;color:rgba(255,255,255,.4);margin-top:18px}
+  /* FOOTER */
+  .footer{background:#070f1c;color:rgba(255,255,255,.6);padding:56px 0 36px;margin-top:80px}
+  .footer-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:32px;margin-bottom:44px}
+  .footer-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:700;color:#fff;margin-bottom:14px}
+  .footer-logo-icon{width:36px;height:36px;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .footer-tagline{font-size:14px;line-height:1.65;max-width:300px}
+  .footer-col h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.4);margin-bottom:16px}
+  .footer-col ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
+  .footer-col a{font-size:14px;color:rgba(255,255,255,.55);transition:color var(--transition)}
+  .footer-col a:hover{color:rgba(255,255,255,.9)}
+  .footer-bottom{border-top:1px solid rgba(255,255,255,.08);padding-top:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+  .footer-copy{font-size:13px}
+  .footer-legal{display:flex;gap:24px}
+  .footer-legal a{font-size:13px;color:rgba(255,255,255,.45);transition:color var(--transition)}
+  .footer-legal a:hover{color:rgba(255,255,255,.8)}
+  /* ANIM */
+  .fade-up{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+  .fade-up.is-visible{opacity:1;transform:translateY(0)}
+  .fade-up:nth-child(2){transition-delay:.1s}.fade-up:nth-child(3){transition-delay:.2s}
+  @media(max-width:860px){.featured{grid-template-columns:1fr}.featured-visual{min-height:200px}.topics-grid{grid-template-columns:1fr}}
+  @media(max-width:600px){.nav-links{gap:16px}.nav-links a{font-size:13px}.footer-bottom{flex-direction:column;text-align:center}.cta-section{padding:48px 24px}.featured-body{padding:32px 26px}}
+</style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="container"><div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon"><img src="icon.png" alt="In-Dependent Living logo" style="width:100%;height:100%;display:block;border-radius:inherit" /></div>
+        In-Dependent Living
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="blog.html" class="active">Blog</a></li>
+        <li><a href="index.html#pricing">Pricing</a></li>
+      </ul>
+    </div></div>
+  </nav>
+
+  <header class="blog-hero">
+    <div class="blog-hero-grid"></div>
+    <div class="container"><div class="blog-hero-inner">
+      <div class="eyebrow">The Blog</div>
+      <h1>Independence, <em>together.</em></h1>
+      <p>Practical, respectful advice on supporting aging parents — medication safety, caregiving without hovering, and helping the people you love stay in charge of their own lives.</p>
+    </div></div>
+  </header>
+
+  <main class="blog-main">
+    <div class="container">
+      <div class="section-label">Latest article</div>
+
+      <article class="featured fade-up">
+        <div class="featured-visual">
+          <div class="featured-visual-grid"></div>
+          <div class="featured-glyph">Their independence.<br /><span>Your</span> peace of mind.</div>
+        </div>
+        <div class="featured-body">
+          <span class="tag">Family &amp; Caregiving</span>
+          <h2><a href="blog-help-aging-parents-stay-independent.html">How to Help Aging Parents Stay Independent — Without Hovering</a></h2>
+          <p>Most adult children aren't trying to take over a parent's life — they just want to stop worrying. Here's how to close that gap with respect, not surveillance.</p>
+          <div class="post-meta"><span>8 min read</span><span class="dot"></span><span>June 2026</span></div>
+          <a href="blog-help-aging-parents-stay-independent.html" class="read-link">Read the article
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        </div>
+      </article>
+
+      <div class="topics">
+        <div class="section-label">More topics we cover</div>
+        <div class="topics-grid">
+          <div class="topic-card fade-up">
+            <div class="topic-icon" style="background:#dbeafe">💊</div>
+            <h3>Medication Safety</h3>
+            <p>Building reliable routines and avoiding the missed and doubled doses that cause the most trouble.</p>
+            <span class="soon">Coming soon</span>
+          </div>
+          <div class="topic-card fade-up">
+            <div class="topic-icon" style="background:#dcfce7">🤝</div>
+            <h3>Caregiver Wellbeing</h3>
+            <p>Staying close to a parent across the miles without burning out or hovering over every detail.</p>
+            <span class="soon">Coming soon</span>
+          </div>
+          <div class="topic-card fade-up">
+            <div class="topic-icon" style="background:#fef9c3">🔒</div>
+            <h3>Privacy &amp; Dignity</h3>
+            <p>Why letting seniors control what they share is the key to tools they'll actually want to use.</p>
+            <span class="soon">Coming soon</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="cta-section">
+        <div class="cta-inner">
+          <h2>Their independence. <em>Your</em> peace of mind.</h2>
+          <p>Put medications, calendar, activity, and a one-tap SOS in one place — with privacy controls the senior owns. Free 7-day trial.</p>
+          <a href="https://apps.apple.com/us/app/in-dependent-living/id6761432570" class="store-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Download on the App Store
+          </a>
+          <p class="cta-fine">iPhone &amp; iPad · iOS 16+ · Each person subscribes individually</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer"><div class="container">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo"><div class="footer-logo-icon"><img src="icon.png" alt="In-Dependent Living logo" style="width:100%;height:100%;display:block;border-radius:inherit" /></div>In-Dependent Living</div>
+        <p class="footer-tagline">Helping seniors live independently with the quiet support of family — built on trust, privacy, and genuine care.</p>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><ul><li><a href="index.html">Home</a></li><li><a href="blog.html">Blog</a></li><li><a href="index.html#pricing">Pricing</a></li><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms of Use</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">&copy; 2026 Theory Solutions LLC. All rights reserved.</p>
+      <div class="footer-legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="mailto:support@theory-solutions.com">Contact</a></div>
+    </div>
+  </div></footer>
+
+  <script>
+    const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('is-visible')}),{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+    document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+  </script>
+</body>
+</html>
